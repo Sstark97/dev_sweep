@@ -1,74 +1,105 @@
-# DevSweep
+<div align="center">
+  <img src="assets/icon.png" alt="DevSweep Logo" width="200" />
+  
+  # DevSweep
+  
+  **Professional macOS developer cache cleaner**
+  
+  _Reclaim gigabytes of disk space safely and intelligently_
 
-> Professional macOS developer cache cleaner - Reclaim gigabytes of disk space safely.
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+  [![Bash](https://img.shields.io/badge/Bash-5.0+-blue.svg)](https://www.gnu.org/software/bash/)
+  [![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
+  [![Tests](https://img.shields.io/badge/Tests-101%20passing-brightgreen.svg)](tests/)
+</div>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Bash](https://img.shields.io/badge/Bash-5.0+-blue.svg)](https://www.gnu.org/software/bash/)
-[![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
+---
 
-## Overview
+## 🎯 Overview
 
-DevSweep is a production-grade CLI tool that safely cleans deep system caches on macOS, specifically targeting:
+DevSweep is a **production-grade CLI tool** that safely cleans deep system caches on macOS, helping developers reclaim valuable disk space without compromising system stability.
 
-- **JetBrains IDEs** - Removes old versions, keeps the latest, cleans corrupted index caches
-- **Docker/OrbStack** - Resets container data and reclaims disk space
-- **Homebrew** - Aggressive cleanup and cache pruning
-- **Dev Tools** - Maven, Gradle, Node, npm, nvm cache cleanup
-- **System** - Logs, caches, and Spotlight index rebuild
+### 🧹 What It Cleans
 
-## Features
+- **🎨 JetBrains IDEs** - Removes old versions, keeps latest, cleans corrupted caches (~2-5GB)
+- **🐳 Docker/OrbStack** - Containers, images, volumes, and build cache (~5-20GB)
+- **🍺 Homebrew** - Old package versions, unused dependencies, download cache (~500MB-2GB)
+- **⚙️ Dev Tools** - Maven, Gradle, npm, yarn, pnpm, pip caches (~5-15GB)
+- **🗂️ System** _(Coming soon)_ - System logs and caches
 
-- **Safety First**: Built-in `--dry-run` mode to preview actions
-- **Interactive Menu**: User-friendly interface when run without arguments
-- **Modular Architecture**: Clean, testable, extensible codebase
-- **Double Confirmation**: Explicit "type yes" for destructive operations
-- **Comprehensive Logging**: Colored output with verbosity control
-- **Well Tested**: Full bashunit test suite with mocking
+**Average recovery**: 10-30GB of disk space
 
-## Installation
+## ✨ Features
 
-### Option 1: Homebrew (Recommended)
+- 🛡️ **Safety First**: Built-in `--dry-run` mode to preview all actions
+- 🎛️ **Interactive Menu**: User-friendly interface for guided cleanup
+- 🔧 **Modular Architecture**: Clean, testable, extensible codebase
+- ⚠️ **Double Confirmation**: Explicit approval for destructive operations
+- 📊 **Smart Analysis**: Shows estimated space to be recovered
+- 🎨 **Beautiful Output**: Colored, organized logging with progress indicators
+- ✅ **Well Tested**: 101 tests, 123 assertions, 100% passing
+-  📦 Installation
+
+### Homebrew _(Coming soon)_
 
 ```bash
-# Coming soon - after Homebrew Core submission
 brew install devsweep
 ```
 
-### Option 2: Local Installation (No sudo)
+### Quick Install (Recommended)
 
 ```bash
+# Clone and install locally (no sudo required)
 git clone https://github.com/Sstark97/dev_sweep.git
 cd dev_sweep
 make install-local
+
+# Verify installation
+devsweep --version
 ```
 
-Add to your PATH if needed:
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
+The command will be available at `~/.local/bin/devsweep`
 
-### Option 3: System-wide Installation
+### System-wide Installation
 
 ```bash
 git clone https://github.com/Sstark97/dev_sweep.git
 cd dev_sweep
 sudo make install
+
+# Available globally
+devsweep --version
 ```
 
-## For Maintainers
-
-### Release New Version
+### Uninstall
 
 ```bash
-# Complete release workflow
-make publish VERSION=1.0.0
+# Local installation
+make uninstall-local
+
+# System-wide
+sudo make uninstall
 ```
 
-See [HOMEBREW_CORE_SUBMISSION.md](HOMEBREW_CORE_SUBMISSION.md) for publishing to Homebrew.
+## 🚀 Usagemd](HOMEBREW_CORE_SUBMISSION.md) for publishing to Homebrew.
 
 ## Usage
+ 🚀 Usage
 
+### Quick Start
+
+```bash
+# Interactive mode - guided cleanup
+devsweep
+
+# Safe preview - see what would be deleted
+devsweep --dry-run --all
+
+# Clean everything (with confirmations)
+devsweep --all
+```
+
+### Interactive Mode
 ### Interactive Mode (Default)
 
 ```bash
@@ -112,17 +143,17 @@ devsweep --verbose --jetbrains
 | `--homebrew` | | Clean Homebrew only |
 | `--devtools` | | Clean dev tools (Maven, Gradle, Node) |
 | `--system` | | Clean system caches and logs |
+# Clean only JetBrains with preview
+devsweep --jetbrains --verbose
 
-## Safety Features
+# Full cleanup of dev tools
+devsweep --devtools --docker --homebrew
 
-1. **Dry-Run Mode**: Test commands without side effects
-2. **Interactive Confirmations**: Explicit approval for dangerous operations
-3. **Sudo Validation**: Only requests elevated privileges when necessary
-4. **Detailed Logging**: Full transparency of actions taken
-5. **Version Preservation**: Keeps latest JetBrains IDE versions
+# Clean everything (skip confirmations - use with caution!)
+devsweep --force --all
+```
 
-## Examples
-
+## 🛡️ Safety Features
 ```bash
 # Safe exploration - see what would be deleted
 devsweep --dry-run --all
@@ -139,60 +170,166 @@ devsweep --force --all
 
 ## Development
 
+## 💻 Development
+
 ### Prerequisites
 
 - macOS 10.15+
 - Bash 5.0+
-- [bashunit](https://github.com/TypedDevs/bashunit) for testing
+- [bashunit](https://github.com/TypedDevs/bashunit) 0.32.0+ for testing
+
+### Setup
+
+```bash
+# Clone repository
+git clone https://github.com/Sstark97/dev_sweep.git
+cd dev_sweep
+
+# Install dependencies
+make setup
+
+# Run tests
+make test
+```
 
 ### Running Tests
 
 ```bash
-# Install bashunit
-make install-bashunit
-
-# Run all tests
+# Run all tests (101 tests, ~11s)
 make test
 
-# Run specific test file
+# Run specific test suite
 ./bashunit tests/unit/jetbrains_test.sh
+
+# Watch mode (requires fswatch)
+make watch-test
+```
+
+### Make Commands
+
+```bash
+make help              # Show all available commands
+make test              # Run all tests
+make lint              # Run shellcheck
+make check             # Syntax validation
+make install-local     # Install locally
+make clean             # Remove temporary files
 ```
 
 ### Project Structure
 
 ```
 dev_sweep/
-├── bin/devsweep              # Entry point
+├── bin/
+│   └── devsweep              # Main entry point
 ├── src/
-│   ├── modules/              # Cleanup logic modules
-│   │   ├── jetbrains.sh
-│   │   ├── docker.sh
-│   │   ├── homebrew.sh
-│   │   ├── devtools.sh
-│   │   └── system.sh
+│   ├── modules/              # Cleanup modules
+│   │   ├── jetbrains.sh      # JetBrains IDE cleanup
+│   │   ├── docker.sh         # Docker/OrbStack cleanup
+│   │   ├── homebrew.sh       # Homebrew cleanup
+│   │   └── devtools.sh       # Dev tools cleanup
 │   └── utils/                # Shared utilities
-│       ├── config.sh
-│       ├── common.sh
-│       └── menu.sh
-└── tests/                    # Test suite
-    ├── unit/
-    └── integration/
+│       ├── config.sh         # Configuration
+│       ├── common.sh         # Common functions
+│       └── menu.sh           # Interactive menu
+├── tests/
+│   └── unit/                 # Unit tests (101 tests)
+├── Makefile                  # Build automation
+└── .bashunit.yml             # Test configuration
 ```
 
-## Contributing
+## 🔄 For Maintainers
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+### Creating a Release
 
-## License
+```bash
+# Complete automated release workflow
+make publish VERSION=1.0.0
+```
+
+This command:
+1. ✅ Runs all tests
+2. ✅ Creates release tarball
+3. ✅ Creates and pushes git tag
+4. ⏸️ Pauses for GitHub release creation
+5. ✅ Updates Homebrew formula with correct SHA256
+6. ✅ Validates everything is ready
+
+See [QUICKSTART_RELEASE.md](QUICKSTART_RELEASE.md) for details.
+
+### Publishing to Homebrew
+
+After creating a release, submit to Homebrew Core:
+
+```bash
+# Fork and clone homebrew-core
+git clone https://github.com/YOUR_USERNAME/homebrew-core.git
+cd homebrew-core
+
+# Add formula
+git checkout -b devsweep
+cp ../dev_sweep/devsweep.rb Formula/devsweep.rb
+
+# Test and submit
+brew install --build-from-source Formula/devsweep.rb
+brew test devsweep
+brew audit --strict --online Formula/devsweep.rb
+
+git add Formula/devsweep.rb
+git commit -m "devsweep 1.0.0 (new formula)"
+git push origin devsweep
+```
+
+See [HOMEBREW_CORE_SUBMISSION.md](HOMEBREW_CORE_SUBMISSION.md) for complete guide.
+
+## 📊 Test Coverage
+
+```
+Tests:      101 passed, 101 total
+Assertions: 123 passed, 123 total
+Time:       ~11 seconds
+Coverage:   All modules tested
+```
+
+## 🤝 Contributing
+
+## 🤝 Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
+- Code style guidelines
+- Testing requirements
+- Pull request process
+- Development workflow
+
+## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## Author
+## 🙏 Acknowledgments
 
-Built with craftsmanship by a Senior Software Engineer who values clean code, safety, and professional tooling.
-
-## Acknowledgments
-
-- Inspired by the need to reclaim disk space on developer machines
 - Built with [bashunit](https://github.com/TypedDevs/bashunit) for professional testing
 - Follows Clean Code principles and modern bash best practices
+- Inspired by the need to reclaim disk space on developer machines
+
+## 📚 Documentation
+
+- [QUICKSTART.md](QUICKSTART.md) - Quick start guide
+- [QUICKSTART_RELEASE.md](QUICKSTART_RELEASE.md) - Release workflow guide
+- [HOMEBREW_CORE_SUBMISSION.md](HOMEBREW_CORE_SUBMISSION.md) - Homebrew publishing guide
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+
+## 🔗 Links
+
+- **Repository**: https://github.com/Sstark97/dev_sweep
+- **Issues**: https://github.com/Sstark97/dev_sweep/issues
+- **Releases**: https://github.com/Sstark97/dev_sweep/releases
+
+---
+
+<div align="center">
+  
+  **Made with ❤️ by developers, for developers**
+  
+  If DevSweep saved you disk space, give it a ⭐!
+
+</div>
