@@ -32,9 +32,11 @@ bashunit
 *.backup
 *.bak
 
-# Build artifacts (if any)
+# Build artifacts and releases
 dist/
 build/
+*.tar.gz
+*.zip
 
 # Local environment
 .env
