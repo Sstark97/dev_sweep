@@ -266,7 +266,7 @@ publish:
 	@echo "$(BLUE)  DevSweep Release Workflow$(NC)"
 	@echo "$(BLUE)═══════════════════════════════════════$(NC)"
 	@echo ""
-	@if [ -z "$(VERSION)" ] || [ "$(VERSION)" = "1.0.0" ]; then \
+	@if [ -z "$(VERSION)" ]; then \
 		echo "$(RED)✗ Please specify VERSION=X.Y.Z$(NC)"; \
 		echo "  Example: make publish VERSION=1.0.0"; \
 		exit 1; \
