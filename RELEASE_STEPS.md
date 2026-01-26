@@ -35,35 +35,72 @@ This creates `dist/devsweep-1.0.0.tar.gz` and displays the SHA256 hash.
 4. Upload `dist/devsweep-1.0.0.tar.gz`
 5. Publish release
 
-## 3. Publish to Homebrew
+## 3. Publish to Homebrew Core (for `brew install devsweep`)
 
-### Option A: Your Own Tap (Easiest)
+See [HOMEBREW_CORE_SUBMISSION.md](HOMEBREW_CORE_SUBMISSION.md) for the complete guide.
+
+### Quick Process:
+
+1. **Create GitHub Release**
+   ```bash
+   git tag -a v1.0.0 -m "Release version 1.0.0"
+   git push origin v1.0.0
+   ```
+   Then create release on GitHub and upload `dist/devsweep-1.0.0.tar.gz`
+
+2. **Download and verify SHA256** (GitHub generates a new tarball)
+   ```bash
+   curl -L https://github.com/Sstark97/dev_sweep/archive/refs/tags/v1.0.0.tar.gz -o github-release.tar.gz
+   shasum -a 256 github-release.tar.gz
+   # Update devsweep.rb with this SHA256
+   ```
+
+3. **Test locally**
+   ```bash
+   brew install --build-from-source ./devsweep.rb
+   brew test devsweep
+   brew audit --strict --online ./devsweep.rb
+   ```
+
+4. **Submit to Homebrew Core**
+   ```bash
+   # Fork Homebrew/homebrew-core on GitHub
+   git clone https://github.com/YOUR_USERNAME/homebrew-core.git
+   cd homebrew-core
+   git checkout -b devsweep
+   cp /path/to/devsweep.rb Formula/devsweep.rb
+   git add Formula/devsweep.rb
+   git commit -m "devsweep 1.0.0 (new formula)"
+   git push origin devsweep
+   # Create PR on GitHub
+   ```
+
+### Alternative: Your Own Tap (Faster)
+
+If not ready for Homebrew Core, create your own tap first:
+
+### Alternative: Your Own Tap (Faster)
+
+If not ready for Homebrew Core, create your own tap first:
 
 1. **Create tap repository on GitHub**
    ```bash
-   # Repository name MUST be: homebrew-devsweep
+   # Repository name MUST be: homebrew-tap (or homebrew-devsweep)
    ```
 
-2. **Update formula with release URL**
+2. **Copy formula to tap**
    ```bash
-   # Edit devsweep.rb:
-   # - Update URL to point to GitHub release tarball
-   # - Update sha256 with value from create-release.sh
-   ```
-
-3. **Copy formula to tap**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/homebrew-devsweep.git
-   cp devsweep.rb homebrew-devsweep/Formula/devsweep.rb
-   cd homebrew-devsweep
+   git clone https://github.com/Sstark97/homebrew-tap.git
+   cp devsweep.rb homebrew-tap/Formula/devsweep.rb
+   cd homebrew-tap
    git add Formula/devsweep.rb
    git commit -m "Add devsweep 1.0.0"
    git push
    ```
 
-4. **Users can now install**
+3. **Users install with**
    ```bash
-   brew tap YOUR_USERNAME/devsweep
+   brew tap sstark97/tap
    brew install devsweep
    ```
 
