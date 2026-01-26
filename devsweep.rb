@@ -12,7 +12,7 @@ class Devsweep < Formula
   desc "Intelligent macOS developer cache cleaner"
   homepage "https://github.com/Sstark97/dev_sweep"
   url "https://github.com/Sstark97/dev_sweep/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "9e3bfe5970908b2029a00da5dc19ca20e96876ff8155ff436f5599385ecf5a06"
+  sha256 "627b33cfc8e360584858d2b0cac4ec09e23dae71c847aa5997c0b67c3e661a21"
   license "MIT"
   head "https://github.com/Sstark97/dev_sweep.git", branch: "main"
 
