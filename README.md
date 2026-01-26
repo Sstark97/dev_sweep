@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/icon.png" alt="DevSweep Logo" width="200" />
+  <img src="assets/icon.webp" alt="DevSweep Logo" width="200" />
   
   # DevSweep
   
