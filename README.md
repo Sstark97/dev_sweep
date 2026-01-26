@@ -27,39 +27,45 @@ DevSweep is a production-grade CLI tool that safely cleans deep system caches on
 
 ## Installation
 
-### Option 1: Local Installation (No sudo)
+### Option 1: Homebrew (Recommended)
 
 ```bash
-git clone https://github.com/your-username/devsweep.git
-cd devsweep
+# Coming soon - after Homebrew Core submission
+brew install devsweep
+```
+
+### Option 2: Local Installation (No sudo)
+
+```bash
+git clone https://github.com/Sstark97/dev_sweep.git
+cd dev_sweep
 make install-local
 ```
 
-Add to your PATH (if not already):
+Add to your PATH if needed:
 ```bash
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-### Option 2: System-wide Installation (Requires sudo)
+### Option 3: System-wide Installation
 
 ```bash
-git clone https://github.com/your-username/devsweep.git
-cd devsweep
+git clone https://github.com/Sstark97/dev_sweep.git
+cd dev_sweep
 sudo make install
 ```
 
-### Option 3: Homebrew (Coming soon)
+## For Maintainers
+
+### Release New Version
 
 ```bash
-# Add tap
-brew tap your-username/devsweep
-
-# Install
-brew install devsweep
+# Complete release workflow
+make publish VERSION=1.0.0
 ```
 
-See [HOMEBREW_RELEASE.md](HOMEBREW_RELEASE.md) for instructions on publishing to Homebrew.
+See [HOMEBREW_CORE_SUBMISSION.md](HOMEBREW_CORE_SUBMISSION.md) for publishing to Homebrew.
 
 ## Usage
 

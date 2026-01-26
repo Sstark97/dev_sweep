@@ -1,4 +1,4 @@
-.PHONY: help install install-local uninstall uninstall-local test test-unit test-integration lint check clean setup install-bashunit
+.PHONY: help install install-local uninstall uninstall-local test test-unit test-integration lint check clean setup install-bashunit release tag formula test-formula publish
 
 # ============================================================
 # VARIABLES
@@ -12,6 +12,14 @@ LOCAL_PREFIX ?= $(HOME)/.local
 LOCAL_BINDIR = $(LOCAL_PREFIX)/bin
 LOCAL_INSTALL_DIR = $(LOCAL_PREFIX)/lib/devsweep
 
+# Release variables
+VERSION ?= 1.0.0
+GITHUB_USER ?= Sstark97
+GITHUB_REPO ?= dev_sweep
+GITHUB_URL = https://github.com/$(GITHUB_USER)/$(GITHUB_REPO)
+RELEASE_NAME = devsweep-$(VERSION)
+RELEASE_DIR = dist/$(RELEASE_NAME)
+
 BASHUNIT_VERSION = 0.32.0
 BASHUNIT_URL = https://github.com/TypedDevs/bashunit/releases/download/$(BASHUNIT_VERSION)/bashunit
 
@@ -19,6 +27,7 @@ BASHUNIT_URL = https://github.com/TypedDevs/bashunit/releases/download/$(BASHUNI
 BLUE = \033[0;34m
 GREEN = \033[0;32m
 YELLOW = \033[1;33m
+RED = \033[0;31m
 NC = \033[0m # No Color
 
 # ============================================================
@@ -48,6 +57,13 @@ help:
 	@echo ""
 	@echo "$(GREEN)Cleanup:$(NC)"
 	@echo "  make clean              - Remove temporary files and test artifacts"
+	@echo ""
+	@echo "$(GREEN)Release:$(NC)"
+	@echo "  make release VERSION=X.Y.Z  - Create release tarball"
+	@echo "  make tag VERSION=X.Y.Z      - Create and push git tag"
+	@echo "  make formula VERSION=X.Y.Z  - Update Homebrew formula"
+	@echo "  make test-formula           - Test Homebrew formula locally"
+	@echo "  make publish                - Full release workflow"
 
 # ============================================================
 # SETUP
@@ -179,6 +195,124 @@ clean:
 	@find . -name "*.tmp" -delete
 	@find . -name ".DS_Store" -delete
 	@echo "$(GREEN)✓ Cleanup complete$(NC)"
+
+# ============================================================
+# RELEASE
+# ============================================================
+release:
+	@echo "$(BLUE)Creating release $(VERSION)...$(NC)"
+	@rm -rf dist
+	@mkdir -p $(RELEASE_DIR)
+	@echo "$(BLUE)Copying files...$(NC)"
+	@cp -r bin src $(RELEASE_DIR)/
+	@cp LICENSE README.md CONTRIBUTING.md QUICKSTART.md $(RELEASE_DIR)/
+	@cp Makefile $(RELEASE_DIR)/
+	@echo "$(BLUE)Creating tarball...$(NC)"
+	@cd dist && tar -czf $(RELEASE_NAME).tar.gz $(RELEASE_NAME)
+	@echo ""
+	@echo "$(GREEN)✓ Release created: dist/$(RELEASE_NAME).tar.gz$(NC)"
+	@echo "$(BLUE)SHA256:$(NC)"
+	@shasum -a 256 dist/$(RELEASE_NAME).tar.gz | awk '{print $$1}'
+	@echo ""
+	@echo "$(YELLOW)Next: Create GitHub release and run 'make formula VERSION=$(VERSION)'$(NC)"
+
+tag:
+	@echo "$(BLUE)Creating git tag v$(VERSION)...$(NC)"
+	@if git rev-parse "v$(VERSION)" >/dev/null 2>&1; then \
+		echo "$(RED)✗ Tag v$(VERSION) already exists$(NC)"; \
+		exit 1; \
+	fi
+	@git tag -a "v$(VERSION)" -m "Release version $(VERSION)"
+	@git push origin "v$(VERSION)"
+	@echo "$(GREEN)✓ Tag v$(VERSION) created and pushed$(NC)"
+
+formula:
+	@echo "$(BLUE)Updating Homebrew formula for version $(VERSION)...$(NC)"
+	@echo "$(BLUE)Downloading GitHub release tarball...$(NC)"
+	@curl -fsSL "$(GITHUB_URL)/archive/refs/tags/v$(VERSION).tar.gz" -o /tmp/devsweep-github.tar.gz || { \
+		echo "$(RED)✗ Failed to download release. Make sure:$(NC)"; \
+		echo "  1. Tag v$(VERSION) exists: git tag -l"; \
+		echo "  2. GitHub release is published"; \
+		exit 1; \
+	}
+	@GITHUB_SHA256=$$(shasum -a 256 /tmp/devsweep-github.tar.gz | awk '{print $$1}'); \
+	echo "$(GREEN)✓ GitHub SHA256: $$GITHUB_SHA256$(NC)"; \
+	sed -i.bak \
+		-e "s|url \".*\"|url \"$(GITHUB_URL)/archive/refs/tags/v$(VERSION).tar.gz\"|" \
+		-e "s|sha256 \".*\"|sha256 \"$$GITHUB_SHA256\"|" \
+		devsweep.rb && rm devsweep.rb.bak
+	@rm /tmp/devsweep-github.tar.gz
+	@echo "$(GREEN)✓ Formula updated$(NC)"
+	@echo "$(YELLOW)Test with: make test-formula$(NC)"
+
+test-formula:
+	@echo "$(BLUE)Testing Homebrew formula...$(NC)"
+	@brew install --build-from-source ./devsweep.rb
+	@echo "$(GREEN)✓ Installation successful$(NC)"
+	@echo ""
+	@echo "$(BLUE)Running formula tests...$(NC)"
+	@brew test devsweep
+	@echo "$(GREEN)✓ Tests passed$(NC)"
+	@echo ""
+	@echo "$(BLUE)Running audit...$(NC)"
+	@brew audit --strict --online ./devsweep.rb
+	@echo "$(GREEN)✓ Audit passed$(NC)"
+	@echo ""
+	@brew uninstall devsweep
+	@echo "$(GREEN)✓ Formula is ready!$(NC)"
+
+publish:
+	@echo "$(BLUE)═══════════════════════════════════════$(NC)"
+	@echo "$(BLUE)  DevSweep Release Workflow$(NC)"
+	@echo "$(BLUE)═══════════════════════════════════════$(NC)"
+	@echo ""
+	@if [ -z "$(VERSION)" ] || [ "$(VERSION)" = "1.0.0" ]; then \
+		echo "$(RED)✗ Please specify VERSION=X.Y.Z$(NC)"; \
+		echo "  Example: make publish VERSION=1.0.0"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)Version: $(VERSION)$(NC)"
+	@echo ""
+	@echo "$(BLUE)[1/5] Running tests...$(NC)"
+	@make test-unit
+	@echo "$(GREEN)✓ Tests passed$(NC)"
+	@echo ""
+	@echo "$(BLUE)[2/5] Creating release tarball...$(NC)"
+	@make release VERSION=$(VERSION)
+	@echo ""
+	@echo "$(BLUE)[3/5] Creating git tag...$(NC)"
+	@make tag VERSION=$(VERSION)
+	@echo ""
+	@echo "$(YELLOW)════════════════════════════════════════$(NC)"
+	@echo "$(YELLOW)  MANUAL STEP REQUIRED$(NC)"
+	@echo "$(YELLOW)════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "Create GitHub release:"
+	@echo "  1. Go to: $(GITHUB_URL)/releases/new"
+	@echo "  2. Select tag: v$(VERSION)"
+	@echo "  3. Title: DevSweep v$(VERSION)"
+	@echo "  4. Describe changes"
+	@echo "  5. Publish release (GitHub generates tarball automatically)"
+	@echo ""
+	@read -p "Press ENTER once GitHub release is published..." dummy
+	@echo ""
+	@echo "$(BLUE)[4/5] Updating Homebrew formula...$(NC)"
+	@make formula VERSION=$(VERSION)
+	@echo ""
+	@echo "$(BLUE)[5/5] Testing formula...$(NC)"
+	@make test-formula
+	@echo ""
+	@echo "$(GREEN)════════════════════════════════════════$(NC)"
+	@echo "$(GREEN)  ✓ Release $(VERSION) Complete!$(NC)"
+	@echo "$(GREEN)════════════════════════════════════════$(NC)"
+	@echo ""
+	@echo "Next steps for Homebrew Core:"
+	@echo "  1. Fork: https://github.com/Homebrew/homebrew-core"
+	@echo "  2. Copy formula: cp devsweep.rb <homebrew-core>/Formula/"
+	@echo "  3. Commit: git commit -m 'devsweep $(VERSION) (new formula)'"
+	@echo "  4. Create PR to Homebrew/homebrew-core"
+	@echo ""
+	@echo "See: $(BLUE)HOMEBREW_CORE_SUBMISSION.md$(NC)"
 
 # ============================================================
 # DEVELOPMENT
