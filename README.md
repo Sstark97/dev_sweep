@@ -38,7 +38,9 @@ DevSweep is a **production-grade CLI tool** that safely cleans deep system cache
 - 📊 **Smart Analysis**: Shows estimated space to be recovered
 - 🎨 **Beautiful Output**: Colored, organized logging with progress indicators
 - ✅ **Well Tested**: 101 tests, 123 assertions, 100% passing
--  📦 Installation
+- 🚀 **Fast**: Optimized for performance, completes in seconds
+
+## 📦 Installation
 
 ### Homebrew _(Coming soon)_
 
@@ -81,10 +83,7 @@ make uninstall-local
 sudo make uninstall
 ```
 
-## 🚀 Usagemd](HOMEBREW_CORE_SUBMISSION.md) for publishing to Homebrew.
-
-## Usage
- 🚀 Usage
+## 🚀 Usage
 
 ### Quick Start
 
@@ -100,7 +99,6 @@ devsweep --all
 ```
 
 ### Interactive Mode
-### Interactive Mode (Default)
 
 ```bash
 devsweep
@@ -143,6 +141,13 @@ devsweep --verbose --jetbrains
 | `--homebrew` | | Clean Homebrew only |
 | `--devtools` | | Clean dev tools (Maven, Gradle, Node) |
 | `--system` | | Clean system caches and logs |
+
+### Examples
+
+```bash
+# Safe exploration - see what would be deleted
+devsweep --dry-run --all
+
 # Clean only JetBrains with preview
 devsweep --jetbrains --verbose
 
@@ -154,21 +159,13 @@ devsweep --force --all
 ```
 
 ## 🛡️ Safety Features
-```bash
-# Safe exploration - see what would be deleted
-devsweep --dry-run --all
 
-# Clean only JetBrains caches (interactive confirmation)
-devsweep --jetbrains
-
-# Full cleanup with verbose output
-devsweep --verbose --all
-
-# Nuclear option (skip all prompts)
-devsweep --force --all
-```
-
-## Development
+1. **🔍 Dry-Run Mode**: Preview all actions without making changes
+2. **✋ Interactive Confirmations**: Explicit approval for destructive operations
+3. **🔒 Smart Validation**: Prevents accidental deletion of critical paths
+4. **📝 Detailed Logging**: Full transparency of all actions taken
+5. **💾 Version Preservation**: Automatically keeps latest IDE versions
+6. **⚡ Graceful Handling**: Safely handles missing tools and empty caches
 
 ## 💻 Development
 
@@ -290,8 +287,6 @@ Assertions: 123 passed, 123 total
 Time:       ~11 seconds
 Coverage:   All modules tested
 ```
-
-## 🤝 Contributing
 
 ## 🤝 Contributing
 
