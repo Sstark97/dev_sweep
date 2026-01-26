@@ -1,0 +1,325 @@
+#!/usr/bin/env bash
+# devsweep - Professional macOS developer cache cleaner
+# Main entry point and argument parser
+
+set -euo pipefail
+
+# Check bash version (warn if < 4.0)
+BASH_MAJOR="${BASH_VERSINFO[0]}"
+if ((BASH_MAJOR < 4)); then
+    echo "WARNING: DevSweep works best with Bash 4.0+ (current: $BASH_VERSION)"
+    echo "Some features may be limited. Install newer bash:"
+    echo "  brew install bash && /usr/local/bin/bash $0 $*"
+    echo ""
+    # Don't exit, just warn
+fi
+
+# ============================================================
+# INITIALIZATION
+# ============================================================
+
+# Get script directory and project root
+# Handle both development (repo) and installed (system) scenarios
+
+# Resolve symlinks to get actual script location
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+    SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$SCRIPT_DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+# Detect if running from installed location or development
+if [[ -d "$SCRIPT_DIR/../src" ]]; then
+    # Running from repo: bin/devsweep
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+elif [[ -d "$SCRIPT_DIR/src" ]]; then
+    # Running from installed location: ~/.local/lib/devsweep/devsweep
+    PROJECT_ROOT="$SCRIPT_DIR"
+else
+    echo "ERROR: Cannot find DevSweep source files"
+    echo "Looked in: $SCRIPT_DIR/../src and $SCRIPT_DIR/src"
+    exit 1
+fi
+
+# Source all utilities and configuration
+# shellcheck source=src/utils/config.sh
+source "$PROJECT_ROOT/src/utils/config.sh"
+# shellcheck source=src/utils/common.sh
+source "$PROJECT_ROOT/src/utils/common.sh"
+# shellcheck source=src/utils/menu.sh
+source "$PROJECT_ROOT/src/utils/menu.sh"
+
+# Source all modules
+# shellcheck source=src/modules/jetbrains.sh
+source "$PROJECT_ROOT/src/modules/jetbrains.sh"
+# shellcheck source=src/modules/docker.sh
+source "$PROJECT_ROOT/src/modules/docker.sh"
+# shellcheck source=src/modules/homebrew.sh
+source "$PROJECT_ROOT/src/modules/homebrew.sh"
+# shellcheck source=src/modules/devtools.sh
+source "$PROJECT_ROOT/src/modules/devtools.sh"
+
+# Global array for selected modules
+declare -a SELECTED_MODULES=()
+
+# ============================================================
+# HELP AND VERSION
+# ============================================================
+
+show_help() {
+    echo -e "${BLUE}DevSweep v${VERSION}${NC} - macOS Developer Cache Cleaner"
+    echo ""
+    echo -e "${CYAN}USAGE:${NC}"
+    echo "    devsweep [OPTIONS] [MODULES]"
+    echo ""
+    echo -e "${CYAN}OPTIONS:${NC}"
+    echo "    -h, --help          Show this help message"
+    echo "    -v, --version       Show version information"
+    echo "    -d, --dry-run       Preview actions without deleting files"
+    echo "    --verbose           Show detailed output"
+    echo "    -f, --force         Skip all confirmations (dangerous!)"
+    echo ""
+    echo -e "${CYAN}MODULES:${NC}"
+    echo "    --jetbrains         Clean JetBrains IDEs (old versions & caches)"
+    echo "    --docker            Clean Docker/OrbStack (DESTRUCTIVE)"
+    echo "    --homebrew          Clean Homebrew caches"
+    echo "    --devtools          Clean dev tools (Maven, Gradle, Node, etc.)"
+    echo "    --system            Clean system logs and caches (requires sudo)"
+    echo "    -a, --all           Run all cleanup modules"
+    echo ""
+    echo -e "${CYAN}EXAMPLES:${NC}"
+    echo "    # Interactive menu (default)"
+    echo "    devsweep"
+    echo ""
+    echo "    # Preview all cleanup operations"
+    echo "    devsweep --dry-run --all"
+    echo ""
+    echo "    # Clean only JetBrains IDEs"
+    echo "    devsweep --jetbrains"
+    echo ""
+    echo "    # Clean multiple specific modules"
+    echo "    devsweep --jetbrains --homebrew"
+    echo ""
+    echo "    # Full cleanup with verbose output"
+    echo "    devsweep --verbose --all"
+    echo ""
+    echo "    # Nuclear option (skip confirmations)"
+    echo "    devsweep --force --all"
+    echo ""
+    echo -e "${CYAN}SAFETY FEATURES:${NC}"
+    echo "    • Dry-run mode to preview all actions"
+    echo "    • Interactive confirmations for dangerous operations"
+    echo "    • Double confirmation (\"type yes\") for destructive actions"
+    echo "    • Keeps latest JetBrains IDE versions automatically"
+    echo "    • Detailed logging of all operations"
+    echo ""
+    echo -e "${CYAN}MORE INFO:${NC}"
+    echo "    GitHub: https://github.com/your-username/devsweep"
+    echo "    Issues: https://github.com/your-username/devsweep/issues"
+    echo ""
+}
+
+show_version() {
+    echo "DevSweep v${VERSION}"
+    echo "macOS Developer Cache Cleaner"
+    echo ""
+    echo "Copyright (c) 2026 DevSweep Contributors"
+    echo "License: MIT"
+}
+
+# ============================================================
+# ARGUMENT PARSING
+# ============================================================
+
+parse_arguments() {
+    # Handle no arguments - show interactive menu
+    if [[ $# -eq 0 ]]; then
+        show_interactive_menu
+        return 0
+    fi
+
+    # Parse arguments using manual parsing (more portable than getopt)
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -v|--version)
+                show_version
+                exit 0
+                ;;
+            -d|--dry-run)
+                DRY_RUN=true
+                log_info "Dry-run mode enabled - no files will be deleted"
+                shift
+                ;;
+            --verbose)
+                VERBOSE=true
+                log_debug "Verbose mode enabled"
+                shift
+                ;;
+            -f|--force)
+                FORCE=true
+                log_warn "Force mode enabled - confirmations will be skipped!"
+                shift
+                ;;
+            -a|--all)
+                SELECTED_MODULES=("jetbrains" "docker" "homebrew" "devtools" "system")
+                shift
+                ;;
+            --jetbrains)
+                SELECTED_MODULES+=("jetbrains")
+                shift
+                ;;
+            --docker)
+                SELECTED_MODULES+=("docker")
+                shift
+                ;;
+            --homebrew)
+                SELECTED_MODULES+=("homebrew")
+                shift
+                ;;
+            --devtools)
+                SELECTED_MODULES+=("devtools")
+                shift
+                ;;
+            --system)
+                SELECTED_MODULES+=("system")
+                shift
+                ;;
+            *)
+                log_error "Unknown option: $1"
+                echo ""
+                echo "Run 'devsweep --help' for usage information"
+                exit "$EXIT_INVALID_ARGS"
+                ;;
+        esac
+    done
+
+    # Validate that at least one module is selected
+    if [[ ${#SELECTED_MODULES[@]} -eq 0 ]]; then
+        log_error "No modules specified"
+        echo ""
+        echo "Run 'devsweep --help' for usage information"
+        exit "$EXIT_INVALID_ARGS"
+    fi
+}
+
+# ============================================================
+# MODULE EXECUTION
+# ============================================================
+
+# Execute selected modules
+run_modules() {
+    local total_modules=${#SELECTED_MODULES[@]}
+    local current=0
+    local failed=0
+
+    log_info "Running ${total_modules} module(s): ${SELECTED_MODULES[*]}"
+    echo ""
+
+    for module in "${SELECTED_MODULES[@]}"; do
+        ((current++))
+
+        log_info "[$current/$total_modules] Running module: $module"
+
+        case "$module" in
+            jetbrains)
+                if cleanup_jetbrains_installations; then
+                    log_success "Module completed: jetbrains"
+                else
+                    log_error "Module failed: jetbrains"
+                    ((failed++))
+                fi
+                ;;
+            docker)
+                if docker_clean; then
+                    log_success "Module completed: docker"
+                else
+                    log_error "Module failed: docker"
+                    ((failed++))
+                fi
+                ;;
+            homebrew)
+                if homebrew_clean; then
+                    log_success "Module completed: homebrew"
+                else
+                    log_error "Module failed: homebrew"
+                    ((failed++))
+                fi
+                ;;
+            devtools)
+                if devtools_clean; then
+                    log_success "Module completed: devtools"
+                else
+                    log_error "Module failed: devtools"
+                    ((failed++))
+                fi
+                ;;
+            system)
+                log_warn "System module not yet implemented"
+                # TODO: Implement cleanup_system_caches in src/modules/system.sh
+                ;;
+            *)
+                log_error "Unknown module: $module"
+                ((failed++))
+                ;;
+        esac
+
+        echo ""
+    done
+
+    return $failed
+}
+
+# ============================================================
+# MAIN EXECUTION
+# ============================================================
+
+main() {
+    # Validate environment
+    if ! require_macos; then
+        exit "$EXIT_NOT_MACOS"
+    fi
+
+    # Parse command-line arguments
+    parse_arguments "$@"
+
+    # Show banner
+    print_banner
+
+    # Show mode indicators
+    if [[ "$DRY_RUN" == true ]]; then
+        log_warn "🔍 DRY-RUN MODE: No files will be deleted"
+    fi
+    if [[ "$FORCE" == true ]]; then
+        log_warn "⚡ FORCE MODE: Confirmations will be skipped"
+    fi
+    echo ""
+
+    # Execute modules
+    local exit_code=0
+    if ! run_modules; then
+        exit_code=$?
+    fi
+
+    # Show completion message
+    if [[ "$DRY_RUN" == true ]]; then
+        echo ""
+        log_success "Dry-run completed. No files were modified."
+        echo ""
+        log_info "To perform actual cleanup, run without --dry-run flag"
+    else
+        print_completion
+        log_info "Note: Spotlight may show 'Calculating...' for a few minutes"
+        log_info "This is normal as macOS recalculates disk space"
+    fi
+
+    exit $exit_code
+}
+
+# Run main function with all arguments
+main "$@"
