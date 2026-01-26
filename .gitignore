@@ -1,0 +1,41 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Bash
+*.swp
+*.swo
+*~
+
+# Test outputs
+tests/.tmp/
+.bashunit/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# Downloaded dependencies
+lib/
+bashunit
+
+# Backup files
+*.backup
+*.bak
+
+# Build artifacts (if any)
+dist/
+build/
+
+# Local environment
+.env
+.env.local
