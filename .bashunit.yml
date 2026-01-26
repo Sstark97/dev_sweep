@@ -1,0 +1,23 @@
+# bashunit configuration for DevSweep
+# https://bashunit.typeddevs.com/configuration
+
+# Directory containing test files
+tests_dir: tests
+
+# Pattern to match test files
+test_regex: "*_test.sh"
+
+# Run tests in parallel for faster execution
+parallel: true
+
+# Show verbose output
+verbose: false
+
+# Stop on first failure
+stop_on_failure: false
+
+# Enable color output
+color: true
+
+# Test timeout in seconds (0 = no timeout)
+timeout: 30
