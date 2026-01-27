@@ -24,6 +24,9 @@ DRY_RUN=false
 VERBOSE=false
 FORCE=false
 
+# Space tracking (accumulated across all cleanup operations)
+TOTAL_SPACE_FREED_KB=0
+
 # ============================================================
 # PATH CONSTANTS
 # ============================================================

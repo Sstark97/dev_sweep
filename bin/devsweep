@@ -307,13 +307,13 @@ main() {
     fi
 
     # Show completion message
+    print_completion
+
     if [[ "$DRY_RUN" == true ]]; then
-        echo ""
         log_success "Dry-run completed. No files were modified."
         echo ""
         log_info "To perform actual cleanup, run without --dry-run flag"
     else
-        print_completion
         log_info "Note: Spotlight may show 'Calculating...' for a few minutes"
         log_info "This is normal as macOS recalculates disk space"
     fi
