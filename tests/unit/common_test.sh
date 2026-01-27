@@ -23,6 +23,7 @@ function set_up() {
     DRY_RUN=false
     VERBOSE=false
     FORCE=false
+    TOTAL_SPACE_FREED_KB=0
 
     # Create temporary test directory
     TEST_TEMP_DIR="$(mktemp -d)"
@@ -255,6 +256,140 @@ function test_get_size_returns_0B_for_nonexistent_file() {
     size=$(get_size "$TEST_TEMP_DIR/nonexistent.txt")
 
     assert_equals "0B" "$size"
+}
+
+# ============================================================
+# SPACE TRACKING TESTS
+# ============================================================
+
+function test_parse_size_to_kb_handles_gigabytes() {
+    local result
+    result=$(parse_size_to_kb "2GB")
+
+    # 2GB = 2 * 1024 * 1024 = 2097152 KB
+    assert_equals "2097152" "$result"
+}
+
+function test_parse_size_to_kb_handles_megabytes() {
+    local result
+    result=$(parse_size_to_kb "500MB")
+
+    # 500MB = 500 * 1024 = 512000 KB
+    assert_equals "512000" "$result"
+}
+
+function test_parse_size_to_kb_handles_kilobytes() {
+    local result
+    result=$(parse_size_to_kb "1024KB")
+
+    assert_equals "1024" "$result"
+}
+
+function test_parse_size_to_kb_handles_bytes() {
+    local result
+    result=$(parse_size_to_kb "2048B")
+
+    # 2048B = 2048 / 1024 = 2 KB
+    assert_equals "2" "$result"
+}
+
+function test_parse_size_to_kb_handles_lowercase_units() {
+    local result
+    result=$(parse_size_to_kb "10mb")
+
+    # Should handle lowercase - 10MB = 10 * 1024 = 10240 KB
+    assert_equals "10240" "$result"
+}
+
+function test_parse_size_to_kb_returns_zero_for_invalid_input() {
+    local result
+    result=$(parse_size_to_kb "invalid")
+
+    assert_equals "0" "$result"
+}
+
+function test_format_kb_to_human_shows_gigabytes() {
+    local result
+    result=$(format_kb_to_human 2097152)
+
+    # 2097152 KB = 2 GB
+    assert_equals "2GB" "$result"
+}
+
+function test_format_kb_to_human_shows_megabytes() {
+    local result
+    result=$(format_kb_to_human 512000)
+
+    # 512000 KB = 500 MB
+    assert_equals "500MB" "$result"
+}
+
+function test_format_kb_to_human_shows_kilobytes() {
+    local result
+    result=$(format_kb_to_human 512)
+
+    assert_equals "512KB" "$result"
+}
+
+function test_track_freed_space_accumulates_correctly() {
+    # Reset counter
+    TOTAL_SPACE_FREED_KB=0
+
+    # Track some space
+    track_freed_space "100MB"  # 100 * 1024 = 102400 KB
+    assert_equals "102400" "$TOTAL_SPACE_FREED_KB"
+
+    # Track more space - should accumulate
+    track_freed_space "50MB"   # 50 * 1024 = 51200 KB
+    assert_equals "153600" "$TOTAL_SPACE_FREED_KB"  # 102400 + 51200
+
+    # Reset for next test
+    TOTAL_SPACE_FREED_KB=0
+}
+
+function test_track_freed_space_ignores_zero_bytes() {
+    TOTAL_SPACE_FREED_KB=0
+
+    track_freed_space "0B"
+    assert_equals "0" "$TOTAL_SPACE_FREED_KB"
+
+    # Reset
+    TOTAL_SPACE_FREED_KB=0
+}
+
+function test_safe_rm_tracks_freed_space_on_successful_deletion() {
+    TOTAL_SPACE_FREED_KB=0
+
+    # Create a test file
+    local test_file="$TEST_TEMP_DIR/test_tracking.txt"
+    echo "some content for testing" > "$test_file"
+
+    # Delete it with safe_rm
+    safe_rm "$test_file" "test file" >/dev/null 2>&1
+
+    # Space should have been tracked (should be > 0)
+    assert_greater_than "$TOTAL_SPACE_FREED_KB" "0"
+
+    # Reset
+    TOTAL_SPACE_FREED_KB=0
+}
+
+function test_safe_rm_does_not_track_in_dry_run() {
+    TOTAL_SPACE_FREED_KB=0
+    DRY_RUN=true
+
+    local test_file="$TEST_TEMP_DIR/test_dry_run.txt"
+    echo "content" > "$test_file"
+
+    safe_rm "$test_file" "test file" >/dev/null 2>&1
+
+    # In dry-run, no space should be tracked
+    assert_equals "0" "$TOTAL_SPACE_FREED_KB"
+
+    # Cleanup
+    DRY_RUN=false
+    TOTAL_SPACE_FREED_KB=0
+    rm -f "$test_file"
 }
 
 # ============================================================
