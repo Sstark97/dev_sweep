@@ -255,15 +255,53 @@ function clear_node_package_caches() {
 
     local cleaned=false
     local cache_summary=""
-    has_cache_found=false
+    local has_cache=false
 
-    # Build cache summary using helper functions
-    cache_summary=$(get_npm_cache_info "$cache_summary")
-    cache_summary=$(get_yarn_cache_info "$cache_summary")
-    cache_summary=$(get_pnpm_cache_info "$cache_summary")
+    # Check if any Node.js caches exist
+    if [[ -d "$NPM_CACHE_PATH" ]]; then
+        local npm_size=$(get_size "$NPM_CACHE_PATH")
+        cache_summary="npm: $npm_size"
+        has_cache=true
+    fi
+
+    local yarn_cache_dirs=(
+        "${HOME}/Library/Caches/Yarn"
+        "${HOME}/.yarn/cache"
+        "${HOME}/.cache/yarn"
+    )
+    for yarn_cache_dir in "${yarn_cache_dirs[@]}"; do
+        if [[ -d "$yarn_cache_dir" ]]; then
+            local yarn_size=$(get_size "$yarn_cache_dir")
+            if [[ -n "$cache_summary" ]]; then
+                cache_summary="$cache_summary, yarn: $yarn_size"
+            else
+                cache_summary="yarn: $yarn_size"
+            fi
+            has_cache=true
+            break
+        fi
+    done
+
+    local pnpm_cache_dirs=(
+        "${HOME}/Library/pnpm/store"
+        "${HOME}/.local/share/pnpm/store"
+        "${HOME}/.pnpm-store"
+    )
+    for pnpm_cache_dir in "${pnpm_cache_dirs[@]}"; do
+        if [[ -d "$pnpm_cache_dir" ]]; then
+            local pnpm_size=$(get_size "$pnpm_cache_dir")
+            if [[ -n "$cache_summary" ]]; then
+                cache_summary="$cache_summary, pnpm: $pnpm_size"
+            else
+                cache_summary="pnpm: $pnpm_size"
+            fi
+            has_cache=true
+            break
+        fi
+    done
 
     # If no caches found, exit early
-    if [[ "$has_cache_found" == false ]]; then
+    if [[ "$has_cache" == false ]]; then
         log_info "No Node.js caches found"
         return 0
     fi
@@ -386,14 +424,41 @@ function clear_python_package_caches() {
 
     local cleaned=false
     local cache_summary=""
-    has_cache_found=false
+    local has_cache=false
 
-    # Build cache summary using helper functions
-    cache_summary=$(get_pip_cache_info "$cache_summary")
-    cache_summary=$(get_poetry_cache_info "$cache_summary")
+    # Check if pip cache exists
+    local pip_cache_dirs=(
+        "${HOME}/Library/Caches/pip"
+        "${HOME}/.cache/pip"
+    )
+    for pip_cache_dir in "${pip_cache_dirs[@]}"; do
+        if [[ -d "$pip_cache_dir" ]]; then
+            local pip_size=$(get_size "$pip_cache_dir")
+            cache_summary="pip: $pip_size"
+            has_cache=true
+            break
+        fi
+    done
+
+    # Check if poetry cache exists
+    local poetry_cache_dirs=(
+        "${HOME}/Library/Caches/pypoetry"
+        "${HOME}/.cache/pypoetry"
+    )
+    for poetry_cache_dir in "${poetry_cache_dirs[@]}"; do
+        if [[ -d "$poetry_cache_dir" ]]; then
+            if [[ -n "$cache_summary" ]]; then
+                cache_summary="$cache_summary, poetry"
+            else
+                cache_summary="poetry"
+            fi
+            has_cache=true
+            break
+        fi
+    done
 
     # If no package managers found, exit early
-    if [[ "$has_cache_found" == false ]]; then
+    if [[ "$has_cache" == false ]]; then
         log_info "No Python package managers found"
         return 0
     fi

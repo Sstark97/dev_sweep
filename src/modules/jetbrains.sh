@@ -135,15 +135,8 @@ clear_ide_index_caches() {
 
     log_info "Clearing index caches (will be rebuilt on next IDE launch)..."
 
-    # Delete all cache contents
-    if [[ "$DRY_RUN" == true ]]; then
-        log_info "[DRY-RUN] Would delete: $JB_CACHE_PATH/*"
-    else
-        find "$JB_CACHE_PATH" -mindepth 1 -delete 2>/dev/null || {
-            log_warn "Some cache files could not be deleted (in use?)"
-        }
-        log_success "Index caches cleared"
-    fi
+    # Delete all cache contents using safe_rm to track space
+    safe_rm "$JB_CACHE_PATH" "Index caches cleared"
 
     return 0
 }
