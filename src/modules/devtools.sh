@@ -132,6 +132,113 @@ function clear_gradle_cache_completely() {
 # NODE/NPM
 # ============================================================
 
+# ============================================================
+# CACHE INFORMATION HELPERS
+# ============================================================
+
+# Get NPM cache information and append to summary
+# Args: $1 = current cache_summary
+# Returns: Updated cache_summary via stdout, sets has_cache_found=true if cache exists
+function get_npm_cache_info() {
+    local current_summary="$1"
+    
+    if [[ -d "$NPM_CACHE_PATH" ]]; then
+        local npm_size=$(get_size "$NPM_CACHE_PATH")
+        if [[ -n "$current_summary" ]]; then
+            echo "$current_summary, NPM: $npm_size"
+        else
+            echo "NPM: $npm_size"
+        fi
+        has_cache_found=true
+    else
+        echo "$current_summary"
+    fi
+}
+
+# Get Yarn cache information and append to summary  
+# Args: $1 = current cache_summary
+# Returns: Updated cache_summary via stdout, sets has_cache_found=true if cache exists
+function get_yarn_cache_info() {
+    local current_summary="$1"
+    
+    if command -v yarn >/dev/null 2>&1; then
+        local yarn_cache_dir=$(yarn cache dir 2>/dev/null || echo "")
+        if [[ -n "$yarn_cache_dir" ]] && [[ -d "$yarn_cache_dir" ]]; then
+            local yarn_size=$(get_size "$yarn_cache_dir")
+            if [[ -n "$current_summary" ]]; then
+                echo "$current_summary, Yarn: $yarn_size"
+            else
+                echo "Yarn: $yarn_size"
+            fi
+            has_cache_found=true
+        else
+            echo "$current_summary"
+        fi
+    else
+        echo "$current_summary"
+    fi
+}
+
+# Get pnpm cache information and append to summary
+# Args: $1 = current cache_summary  
+# Returns: Updated cache_summary via stdout, sets has_cache_found=true if found
+function get_pnpm_cache_info() {
+    local current_summary="$1"
+    
+    if command -v pnpm >/dev/null 2>&1; then
+        if [[ -n "$current_summary" ]]; then
+            echo "$current_summary, pnpm"
+        else
+            echo "pnpm"
+        fi
+        has_cache_found=true
+    else
+        echo "$current_summary"
+    fi
+}
+
+# Get pip cache information and append to summary
+# Args: $1 = current cache_summary
+# Returns: Updated cache_summary via stdout, sets has_cache_found=true if cache exists
+function get_pip_cache_info() {
+    local current_summary="$1"
+    
+    if command -v pip3 >/dev/null 2>&1; then
+        local pip_cache_dir=$(pip3 cache dir 2>/dev/null || echo "")
+        if [[ -n "$pip_cache_dir" ]] && [[ -d "$pip_cache_dir" ]]; then
+            local pip_size=$(get_size "$pip_cache_dir")
+            if [[ -n "$current_summary" ]]; then
+                echo "$current_summary, pip: $pip_size"
+            else
+                echo "pip: $pip_size"
+            fi
+            has_cache_found=true
+        else
+            echo "$current_summary"
+        fi
+    else
+        echo "$current_summary"
+    fi
+}
+
+# Get poetry cache information and append to summary
+# Args: $1 = current cache_summary
+# Returns: Updated cache_summary via stdout, sets has_cache_found=true if found
+function get_poetry_cache_info() {
+    local current_summary="$1"
+    
+    if command -v poetry >/dev/null 2>&1; then
+        if [[ -n "$current_summary" ]]; then
+            echo "$current_summary, poetry"
+        else
+            echo "poetry"
+        fi
+        has_cache_found=true
+    else
+        echo "$current_summary"
+    fi
+}
+
 # Limpia cachés de paquetes de Node.js
 # Returns: 0 on success
 function clear_node_package_caches() {
@@ -139,41 +246,15 @@ function clear_node_package_caches() {
 
     local cleaned=false
     local cache_summary=""
-    local has_any_cache=false
+    has_cache_found=false
 
-    # Check NPM cache
-    if [[ -d "$NPM_CACHE_PATH" ]]; then
-        local npm_size=$(get_size "$NPM_CACHE_PATH")
-        cache_summary="NPM: $npm_size"
-        has_any_cache=true
-    fi
-
-    # Check Yarn cache
-    if command -v yarn >/dev/null 2>&1; then
-        local yarn_cache_dir=$(yarn cache dir 2>/dev/null || echo "")
-        if [[ -n "$yarn_cache_dir" ]] && [[ -d "$yarn_cache_dir" ]]; then
-            local yarn_size=$(get_size "$yarn_cache_dir")
-            if [[ -n "$cache_summary" ]]; then
-                cache_summary="$cache_summary, Yarn: $yarn_size"
-            else
-                cache_summary="Yarn: $yarn_size"
-            fi
-            has_any_cache=true
-        fi
-    fi
-
-    # Check pnpm cache (pnpm doesn't provide easy cache dir, so just indicate presence)
-    if command -v pnpm >/dev/null 2>&1; then
-        if [[ -n "$cache_summary" ]]; then
-            cache_summary="$cache_summary, pnpm"
-        else
-            cache_summary="pnpm"
-        fi
-        has_any_cache=true
-    fi
+    # Build cache summary using helper functions
+    cache_summary=$(get_npm_cache_info "$cache_summary")
+    cache_summary=$(get_yarn_cache_info "$cache_summary")
+    cache_summary=$(get_pnpm_cache_info "$cache_summary")
 
     # If no caches found, exit early
-    if [[ "$has_any_cache" == false ]]; then
+    if [[ "$has_cache_found" == false ]]; then
         log_info "No Node.js caches found"
         return 0
     fi
@@ -291,31 +372,14 @@ function clear_python_package_caches() {
 
     local cleaned=false
     local cache_summary=""
-    local has_any_cache=false
+    has_cache_found=false
 
-    # Check pip cache
-    if command -v pip3 >/dev/null 2>&1; then
-        local pip_cache_dir=$(pip3 cache dir 2>/dev/null || echo "")
-        if [[ -n "$pip_cache_dir" ]] && [[ -d "$pip_cache_dir" ]]; then
-            local pip_size=$(get_size "$pip_cache_dir")
-            cache_summary="pip: $pip_size"
-            has_any_cache=true
-        fi
-    fi
-
-    # Check poetry cache
-    if command -v poetry >/dev/null 2>&1; then
-        # Poetry cache location varies, so we just indicate its presence
-        if [[ -n "$cache_summary" ]]; then
-            cache_summary="$cache_summary, poetry"
-        else
-            cache_summary="poetry"
-        fi
-        has_any_cache=true
-    fi
+    # Build cache summary using helper functions
+    cache_summary=$(get_pip_cache_info "$cache_summary")
+    cache_summary=$(get_poetry_cache_info "$cache_summary")
 
     # If no package managers found, exit early
-    if [[ "$has_any_cache" == false ]]; then
+    if [[ "$has_cache_found" == false ]]; then
         log_info "No Python package managers found"
         return 0
     fi
