@@ -66,8 +66,12 @@ find_outdated_ide_versions() {
         return 0
     fi
 
-    # Return all except the last one (latest)
-    printf '%s\n' "${all_versions[@]:0:version_count-1}"
+    # Return all except the last one (latest) - Bash 3.2 compatible
+    local last_index=$((version_count - 1))
+    local i
+    for ((i = 0; i < last_index; i++)); do
+        printf '%s\n' "${all_versions[$i]}"
+    done
 }
 
 # Removes outdated IDE versions to free disk space
@@ -102,8 +106,15 @@ remove_old_ide_versions() {
     fi
 
     # Multiple versions found - keep latest, remove outdated ones
-    latest_version="${all_versions[-1]}"
-    outdated_versions_to_remove=("${all_versions[@]:0:version_count-1}")
+    # Bash 3.2 compatible: use arithmetic to get last index
+    local last_index=$((version_count - 1))
+    latest_version="${all_versions[$last_index]}"
+
+    # Build array of outdated versions (all except last)
+    local i
+    for ((i = 0; i < last_index; i++)); do
+        outdated_versions_to_remove+=("${all_versions[$i]}")
+    done
 
     log_info "  ${GREEN}✓${NC} Keeping latest: $(basename "$latest_version")"
 
