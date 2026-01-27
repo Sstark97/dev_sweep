@@ -161,9 +161,15 @@ function get_npm_cache_info() {
 function get_yarn_cache_info() {
     local current_summary="$1"
     
-    if command -v yarn >/dev/null 2>&1; then
-        local yarn_cache_dir=$(yarn cache dir 2>/dev/null || echo "")
-        if [[ -n "$yarn_cache_dir" ]] && [[ -d "$yarn_cache_dir" ]]; then
+    # Use default Yarn cache paths instead of running slow 'yarn cache dir'
+    local yarn_cache_dirs=(
+        "${HOME}/Library/Caches/Yarn"
+        "${HOME}/.yarn/cache"
+        "${HOME}/.cache/yarn"
+    )
+    
+    for yarn_cache_dir in "${yarn_cache_dirs[@]}"; do
+        if [[ -d "$yarn_cache_dir" ]]; then
             local yarn_size=$(get_size "$yarn_cache_dir")
             if [[ -n "$current_summary" ]]; then
                 echo "$current_summary, Yarn: $yarn_size"
@@ -171,12 +177,11 @@ function get_yarn_cache_info() {
                 echo "Yarn: $yarn_size"
             fi
             has_cache_found=true
-        else
-            echo "$current_summary"
+            return
         fi
-    else
-        echo "$current_summary"
-    fi
+    done
+    
+    echo "$current_summary"
 }
 
 # Get pnpm cache information and append to summary
@@ -203,9 +208,14 @@ function get_pnpm_cache_info() {
 function get_pip_cache_info() {
     local current_summary="$1"
     
-    if command -v pip3 >/dev/null 2>&1; then
-        local pip_cache_dir=$(pip3 cache dir 2>/dev/null || echo "")
-        if [[ -n "$pip_cache_dir" ]] && [[ -d "$pip_cache_dir" ]]; then
+    # Use default pip cache paths instead of running slow 'pip3 cache dir'
+    local pip_cache_dirs=(
+        "${HOME}/Library/Caches/pip"
+        "${HOME}/.cache/pip"
+    )
+    
+    for pip_cache_dir in "${pip_cache_dirs[@]}"; do
+        if [[ -d "$pip_cache_dir" ]]; then
             local pip_size=$(get_size "$pip_cache_dir")
             if [[ -n "$current_summary" ]]; then
                 echo "$current_summary, pip: $pip_size"
@@ -213,12 +223,11 @@ function get_pip_cache_info() {
                 echo "pip: $pip_size"
             fi
             has_cache_found=true
-        else
-            echo "$current_summary"
+            return
         fi
-    else
-        echo "$current_summary"
-    fi
+    done
+    
+    echo "$current_summary"
 }
 
 # Get poetry cache information and append to summary
@@ -271,26 +280,31 @@ function clear_node_package_caches() {
         cleaned=true
     fi
 
-    # Run npm cache clean if available
-    if command -v npm >/dev/null 2>&1; then
-        log_debug "Running npm cache clean..."
-        execute_command "Clean npm cache" npm cache clean --force
-        cleaned=true
-    fi
+    # Yarn cache - clean directories directly instead of slow yarn command
+    local yarn_cache_dirs=(
+        "${HOME}/Library/Caches/Yarn"
+        "${HOME}/.yarn/cache"
+        "${HOME}/.cache/yarn"
+    )
+    for yarn_cache_dir in "${yarn_cache_dirs[@]}"; do
+        if [[ -d "$yarn_cache_dir" ]]; then
+            safe_rm "$yarn_cache_dir" "Yarn cache"
+            cleaned=true
+        fi
+    done
 
-    # Yarn cache (if exists)
-    if command -v yarn >/dev/null 2>&1; then
-        log_debug "Cleaning Yarn cache..."
-        yarn cache clean 2>/dev/null || true
-        cleaned=true
-    fi
-
-    # pnpm cache (if exists)
-    if command -v pnpm >/dev/null 2>&1; then
-        log_debug "Cleaning pnpm cache..."
-        pnpm store prune 2>/dev/null || true
-        cleaned=true
-    fi
+    # pnpm cache - clean directory directly instead of slow pnpm command
+    local pnpm_cache_dirs=(
+        "${HOME}/Library/pnpm/store"
+        "${HOME}/.local/share/pnpm/store"
+        "${HOME}/.pnpm-store"
+    )
+    for pnpm_cache_dir in "${pnpm_cache_dirs[@]}"; do
+        if [[ -d "$pnpm_cache_dir" ]]; then
+            safe_rm "$pnpm_cache_dir" "pnpm store"
+            cleaned=true
+        fi
+    done
 
     if [[ "$cleaned" == true ]]; then
         log_success "Node.js caches cleared"
@@ -390,19 +404,29 @@ function clear_python_package_caches() {
         return 0
     fi
 
-    # pip cache
-    if command -v pip3 >/dev/null 2>&1; then
-        log_debug "Clearing pip cache..."
-        pip3 cache purge 2>/dev/null || true
-        cleaned=true
-    fi
+    # pip cache - clean directories directly instead of slow pip command
+    local pip_cache_dirs=(
+        "${HOME}/Library/Caches/pip"
+        "${HOME}/.cache/pip"
+    )
+    for pip_cache_dir in "${pip_cache_dirs[@]}"; do
+        if [[ -d "$pip_cache_dir" ]]; then
+            safe_rm "$pip_cache_dir" "pip cache"
+            cleaned=true
+        fi
+    done
 
-    # poetry cache
-    if command -v poetry >/dev/null 2>&1; then
-        log_debug "Clearing poetry cache..."
-        poetry cache clear --all pypi 2>/dev/null || true
-        cleaned=true
-    fi
+    # poetry cache - clean directories directly instead of slow poetry command
+    local poetry_cache_dirs=(
+        "${HOME}/Library/Caches/pypoetry"
+        "${HOME}/.cache/pypoetry"
+    )
+    for poetry_cache_dir in "${poetry_cache_dirs[@]}"; do
+        if [[ -d "$poetry_cache_dir" ]]; then
+            safe_rm "$poetry_cache_dir" "poetry cache"
+            cleaned=true
+        fi
+    done
 
     if [[ "$cleaned" == true ]]; then
         log_success "Python caches cleared"
