@@ -1,51 +1,96 @@
-# Submitting DevSweep to Homebrew Core
+# Publishing DevSweep via Homebrew
 
-This guide explains how to submit DevSweep to **Homebrew Core** so users can install with:
+## Current Status: Personal Tap
+
+DevSweep is currently available via a **personal Homebrew tap**:
+
 ```bash
+brew tap sstark97/tap
 brew install devsweep
 ```
 
-## Quick Start
+### Why Not Homebrew Core?
 
-Use the Makefile commands for the entire release workflow:
+Homebrew Core has strict [notability requirements](https://docs.brew.sh/Acceptable-Formulae#niche-or-self-submitted-stuff) for new formulae:
+
+- Must have significant user base and community adoption
+- Cannot be self-submitted niche projects
+- Needs to demonstrate widespread utility
+
+**Our path forward:**
+1. ✅ Build community and user base via personal tap
+2. ✅ Gather feedback and improve the tool
+3. ✅ Gain GitHub stars and recognition
+4. 🔄 Resubmit to Homebrew Core once notable
+
+## Publishing to Your Own Tap (Current Approach)
+
+## Publishing to Your Own Tap (Current Approach)
+
+### Step 1: Create Tap Repository
 
 ```bash
-# Full automated release
-make publish VERSION=1.0.0
+# Create a new GitHub repository named: homebrew-tap
+# (Must start with "homebrew-" prefix)
 ```
 
-This runs all steps automatically:
-1. ✅ Runs tests
-2. ✅ Creates release tarball
-3. ✅ Creates and pushes git tag
-4. ⏸️  Pauses for you to create GitHub release
-5. ✅ Downloads GitHub tarball and updates formula with correct SHA256
-6. ✅ Tests formula locally
-
-## Individual Commands
+### Step 2: Set Up Tap Structure
 
 ```bash
-# Create release tarball only
-make release VERSION=1.0.0
+# Clone your tap repository
+git clone https://github.com/Sstark97/homebrew-tap.git
+cd homebrew-tap
 
-# Create and push git tag
-make tag VERSION=1.0.0
+# Create Formula directory
+mkdir -p Formula
 
-# Update Homebrew formula with GitHub release
-make formula VERSION=1.0.0
+# Copy the formula
+cp ../dev_sweep/devsweep.rb Formula/devsweep.rb
 
-# Test formula locally
-make test-formula
+# Commit and push
+git add Formula/devsweep.rb
+git commit -m "Add devsweep formula"
+git push origin main
 ```
 
-## Homebrew Core Requirements
+### Step 3: Users Can Install
 
-## Homebrew Core Requirements
+```bash
+# Add your tap
+brew tap sstark97/tap
 
-Before submitting to Homebrew Core, your project must meet these requirements:
+# Install DevSweep
+### Requirements for Homebrew Core
+
+**Notability Indicators:**
+- 75+ GitHub stars
+- Active community (issues, PRs, discussions)
+- Multiple contributors
+- Used by organizations or notable projects
+- Positive reception in developer communities
+- Documentation of widespread usage
+
+**Technical Requirements:**
 
 ✅ **Stable and Maintained**
-- [ ] No frequent breaking changes
+- No frequent breaking changes
+- Active maintenance and bug fixes
+- Responsive to issues
+
+✅ **Good Documentation**
+- [x] Clear README
+- [x] License (MIT)
+- [x] Contributing guidelines
+
+✅ **Versioned Releases**
+- [x] Semantic versioning
+- [x] Proper GitHub releases
+- [x] Tagged commits
+
+✅ **No Closed-Source Dependencies**
+- [x] All dependencies open source
+
+### Submission Process (When Ready)changes
 - [ ] Active maintenance and bug fixes
 - [ ] Responsive to issues
 
@@ -70,27 +115,19 @@ Before submitting to Homebrew Core, your project must meet these requirements:
 
 ## Submission Process
 
-### 1. Release Your Package
+### Submission Process (When Ready)
 
-```bash
-# Run the full release workflow
-make publish VERSION=1.0.0
-```
+1. **Create release** using `make publish VERSION=X.Y.Z`
+2. **Fork Homebrew Core** on GitHub
+3. **Add formula** to `Formula/devsweep.rb`
+4. **Test thoroughly**
+5. **Submit PR** with evidence of notability
 
-The command will:
-- Run all tests
-- Create tarball in `dist/`
-- Create and push git tag `v1.0.0`
-- Prompt you to create GitHub release
-- Update `devsweep.rb` with correct SHA256 from GitHub
-- Test the formula locally
+See [Homebrew documentation](https://docs.brew.sh/Acceptable-Formulae) for complete guidelines.
 
-**Important**: When prompted, create the GitHub release:
-1. Go to https://github.com/Sstark97/dev_sweep/releases/new
-2. Select tag `v1.0.0`
-3. Title: `DevSweep v1.0.0`
-4. Describe changes
-5. Publish (do NOT upload files - GitHub generates tarball automatically)
+## Current Workflow
+
+### Release and Update Taps - GitHub generates tarball automatically)
 
 ### 2. Submit to Homebrew Core
 

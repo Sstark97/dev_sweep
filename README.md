@@ -42,13 +42,17 @@ DevSweep is a **production-grade CLI tool** that safely cleans deep system cache
 
 ## 📦 Installation
 
-### Homebrew _(Coming soon)_
+### Homebrew (Recommended)
 
 ```bash
+# Add the tap
+brew tap sstark97/tap
+
+# Install DevSweep
 brew install devsweep
 ```
 
-### Quick Install (Recommended)
+### Quick Install (Alternative)
 
 ```bash
 # Clone and install locally (no sudo required)
@@ -76,6 +80,10 @@ devsweep --version
 ### Uninstall
 
 ```bash
+# Homebrew
+brew uninstall devsweep
+brew untap sstark97/tap
+
 # Local installation
 make uninstall-local
 
@@ -328,3 +336,9 @@ MIT License - see [LICENSE](LICENSE) for details.
   If DevSweep saved you disk space, give it a ⭐!
 
 </div>
+
+Next steps for Homebrew Core:
+  1. Fork: https://github.com/Homebrew/homebrew-core
+  2. Copy formula: cp devsweep.rb <homebrew-core>/Formula/
+  3. Commit: git commit -m 'devsweep 1.0.0 (new formula)'
+  4. Create PR to Homebrew/homebrew-core
