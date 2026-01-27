@@ -368,7 +368,7 @@ function test_safe_rm_tracks_freed_space_on_successful_deletion() {
     safe_rm "$test_file" "test file" >/dev/null 2>&1
 
     # Space should have been tracked (should be > 0)
-    assert_greater_than "$TOTAL_SPACE_FREED_KB" "0"
+    assert_greater_than "0" "$TOTAL_SPACE_FREED_KB"
 
     # Reset
     TOTAL_SPACE_FREED_KB=0
