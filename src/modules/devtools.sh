@@ -138,38 +138,15 @@ function clear_node_package_caches() {
     log_info "Clearing Node.js package caches..."
 
     local cleaned=false
-    local total_size="0B"
+    local npm_size="0B"
 
-    # Check what's available and estimate size
+    # Get NPM cache size if it exists
     if [[ -d "$NPM_CACHE_PATH" ]]; then
-        total_size=$(get_size "$NPM_CACHE_PATH")
+        npm_size=$(get_size "$NPM_CACHE_PATH")
     fi
 
-    # Check if there's anything to clean
-    local has_npm=false
-    local has_yarn=false
-    local has_pnpm=false
-
-    if [[ -d "$NPM_CACHE_PATH" ]] || command -v npm >/dev/null 2>&1; then
-        has_npm=true
-    fi
-
-    if command -v yarn >/dev/null 2>&1; then
-        has_yarn=true
-    fi
-
-    if command -v pnpm >/dev/null 2>&1; then
-        has_pnpm=true
-    fi
-
-    if [[ "$has_npm" == false ]] && [[ "$has_yarn" == false ]] && [[ "$has_pnpm" == false ]]; then
-        log_info "No Node.js caches found"
-        return 0
-    fi
-
-    log_info "Node.js caches: $total_size (NPM cache size)"
-
-    if ! confirm_action "Clear Node.js caches (NPM: $total_size)?"; then
+    # Ask for confirmation before cleaning
+    if ! confirm_action "Clear Node.js caches (NPM: $npm_size)?"; then
         log_info "Node.js cache cleanup skipped"
         return 0
     fi
@@ -279,23 +256,7 @@ function clear_sdkman_temp_files() {
 function clear_python_package_caches() {
     log_info "Clearing Python package caches..."
 
-    # Check if there's anything to clean
-    local has_pip=false
-    local has_poetry=false
-
-    if command -v pip3 >/dev/null 2>&1; then
-        has_pip=true
-    fi
-
-    if command -v poetry >/dev/null 2>&1; then
-        has_poetry=true
-    fi
-
-    if [[ "$has_pip" == false ]] && [[ "$has_poetry" == false ]]; then
-        log_info "No Python package managers found"
-        return 0
-    fi
-
+    # Ask for confirmation before cleaning
     if ! confirm_action "Clear Python package caches?"; then
         log_info "Python cache cleanup skipped"
         return 0
