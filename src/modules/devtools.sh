@@ -167,9 +167,9 @@ function clear_node_package_caches() {
         return 0
     fi
 
-    log_info "Node.js caches: $total_size"
+    log_info "Node.js caches: $total_size (NPM cache size)"
 
-    if ! confirm_action "Clear Node.js caches ($total_size)?"; then
+    if ! confirm_action "Clear Node.js caches (NPM: $total_size)?"; then
         log_info "Node.js cache cleanup skipped"
         return 0
     fi
