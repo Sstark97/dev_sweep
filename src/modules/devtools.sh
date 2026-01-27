@@ -138,15 +138,48 @@ function clear_node_package_caches() {
     log_info "Clearing Node.js package caches..."
 
     local cleaned=false
-    local npm_size="0B"
+    local cache_summary=""
+    local has_any_cache=false
 
-    # Get NPM cache size if it exists
+    # Check NPM cache
     if [[ -d "$NPM_CACHE_PATH" ]]; then
-        npm_size=$(get_size "$NPM_CACHE_PATH")
+        local npm_size=$(get_size "$NPM_CACHE_PATH")
+        cache_summary="NPM: $npm_size"
+        has_any_cache=true
     fi
 
-    # Ask for confirmation before cleaning
-    if ! confirm_action "Clear Node.js caches (NPM: $npm_size)?"; then
+    # Check Yarn cache
+    if command -v yarn >/dev/null 2>&1; then
+        local yarn_cache_dir=$(yarn cache dir 2>/dev/null || echo "")
+        if [[ -n "$yarn_cache_dir" ]] && [[ -d "$yarn_cache_dir" ]]; then
+            local yarn_size=$(get_size "$yarn_cache_dir")
+            if [[ -n "$cache_summary" ]]; then
+                cache_summary="$cache_summary, Yarn: $yarn_size"
+            else
+                cache_summary="Yarn: $yarn_size"
+            fi
+            has_any_cache=true
+        fi
+    fi
+
+    # Check pnpm cache (pnpm doesn't provide easy cache dir, so just indicate presence)
+    if command -v pnpm >/dev/null 2>&1; then
+        if [[ -n "$cache_summary" ]]; then
+            cache_summary="$cache_summary, pnpm"
+        else
+            cache_summary="pnpm"
+        fi
+        has_any_cache=true
+    fi
+
+    # If no caches found, exit early
+    if [[ "$has_any_cache" == false ]]; then
+        log_info "No Node.js caches found"
+        return 0
+    fi
+
+    # Ask for confirmation with complete cache information
+    if ! confirm_action "Clear Node.js caches ($cache_summary)?"; then
         log_info "Node.js cache cleanup skipped"
         return 0
     fi
@@ -256,13 +289,42 @@ function clear_sdkman_temp_files() {
 function clear_python_package_caches() {
     log_info "Clearing Python package caches..."
 
-    # Ask for confirmation before cleaning
-    if ! confirm_action "Clear Python package caches?"; then
-        log_info "Python cache cleanup skipped"
+    local cleaned=false
+    local cache_summary=""
+    local has_any_cache=false
+
+    # Check pip cache
+    if command -v pip3 >/dev/null 2>&1; then
+        local pip_cache_dir=$(pip3 cache dir 2>/dev/null || echo "")
+        if [[ -n "$pip_cache_dir" ]] && [[ -d "$pip_cache_dir" ]]; then
+            local pip_size=$(get_size "$pip_cache_dir")
+            cache_summary="pip: $pip_size"
+            has_any_cache=true
+        fi
+    fi
+
+    # Check poetry cache
+    if command -v poetry >/dev/null 2>&1; then
+        # Poetry cache location varies, so we just indicate its presence
+        if [[ -n "$cache_summary" ]]; then
+            cache_summary="$cache_summary, poetry"
+        else
+            cache_summary="poetry"
+        fi
+        has_any_cache=true
+    fi
+
+    # If no package managers found, exit early
+    if [[ "$has_any_cache" == false ]]; then
+        log_info "No Python package managers found"
         return 0
     fi
 
-    local cleaned=false
+    # Ask for confirmation with cache information
+    if ! confirm_action "Clear Python package caches ($cache_summary)?"; then
+        log_info "Python cache cleanup skipped"
+        return 0
+    fi
 
     # pip cache
     if command -v pip3 >/dev/null 2>&1; then
