@@ -89,6 +89,12 @@ safe_rm() {
         return 0
     fi
 
+    # Capture size BEFORE deletion for tracking
+    local size_before="0B"
+    if [[ -e "$target" ]]; then
+        size_before=$(get_size "$target")
+    fi
+
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY-RUN] Would delete: $description"
         return 0
@@ -99,6 +105,8 @@ safe_rm() {
 
     if [[ $? -eq 0 ]]; then
         log_success "Deleted: $description"
+        # Track freed space after successful deletion
+        track_freed_space "$size_before"
         return 0
     else
         log_error "Failed to delete: $description"
