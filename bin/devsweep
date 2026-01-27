@@ -285,40 +285,94 @@ main() {
         exit "$EXIT_NOT_MACOS"
     fi
 
-    # Parse command-line arguments
-    parse_arguments "$@"
-
-    # Show banner
-    print_banner
-
-    # Show mode indicators
-    if [[ "$DRY_RUN" == true ]]; then
-        log_warn "🔍 DRY-RUN MODE: No files will be deleted"
-    fi
-    if [[ "$FORCE" == true ]]; then
-        log_warn "⚡ FORCE MODE: Confirmations will be skipped"
-    fi
-    echo ""
-
-    # Execute modules
-    local exit_code=0
-    if ! run_modules; then
-        exit_code=$?
+    # Check if running in interactive mode (no arguments)
+    local interactive_mode=false
+    if [[ $# -eq 0 ]]; then
+        interactive_mode=true
     fi
 
-    # Show completion message
-    print_completion
+    # Interactive mode loop
+    if [[ "$interactive_mode" == true ]]; then
+        while true; do
+            # Reset state for each iteration
+            SELECTED_MODULES=()
+            DRY_RUN=false
+            TOTAL_SPACE_FREED_KB=0
 
-    if [[ "$DRY_RUN" == true ]]; then
-        log_success "Dry-run completed. No files were modified."
-        echo ""
-        log_info "To perform actual cleanup, run without --dry-run flag"
+            # Show interactive menu
+            parse_arguments "$@"
+
+            # Show banner
+            print_banner
+
+            # Show mode indicators
+            if [[ "$DRY_RUN" == true ]]; then
+                log_warn "🔍 DRY-RUN MODE: No files will be deleted"
+            fi
+            if [[ "$FORCE" == true ]]; then
+                log_warn "⚡ FORCE MODE: Confirmations will be skipped"
+            fi
+            echo ""
+
+            # Execute modules
+            local exit_code=0
+            if ! run_modules; then
+                exit_code=$?
+            fi
+
+            # Show completion message
+            print_completion
+
+            if [[ "$DRY_RUN" == true ]]; then
+                log_success "Dry-run completed. No files were modified."
+                echo ""
+                log_info "To perform actual cleanup, run without --dry-run flag"
+            else
+                log_info "Note: Spotlight may show 'Calculating...' for a few minutes"
+                log_info "This is normal as macOS recalculates disk space"
+            fi
+
+            # Ask if user wants to continue
+            if ! ask_continue_cleanup; then
+                exit $exit_code
+            fi
+        done
     else
-        log_info "Note: Spotlight may show 'Calculating...' for a few minutes"
-        log_info "This is normal as macOS recalculates disk space"
-    fi
+        # Non-interactive mode (with flags) - single execution
+        parse_arguments "$@"
 
-    exit $exit_code
+        # Show banner
+        print_banner
+
+        # Show mode indicators
+        if [[ "$DRY_RUN" == true ]]; then
+            log_warn "🔍 DRY-RUN MODE: No files will be deleted"
+        fi
+        if [[ "$FORCE" == true ]]; then
+            log_warn "⚡ FORCE MODE: Confirmations will be skipped"
+        fi
+        echo ""
+
+        # Execute modules
+        local exit_code=0
+        if ! run_modules; then
+            exit_code=$?
+        fi
+
+        # Show completion message
+        print_completion
+
+        if [[ "$DRY_RUN" == true ]]; then
+            log_success "Dry-run completed. No files were modified."
+            echo ""
+            log_info "To perform actual cleanup, run without --dry-run flag"
+        else
+            log_info "Note: Spotlight may show 'Calculating...' for a few minutes"
+            log_info "This is normal as macOS recalculates disk space"
+        fi
+
+        exit $exit_code
+    fi
 }
 
 # Run main function with all arguments
