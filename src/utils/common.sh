@@ -302,6 +302,80 @@ calculate_total_size() {
 }
 
 # ============================================================
+# SPACE TRACKING
+# ============================================================
+
+# Convert KB to human-readable format
+# Usage: format_kb_to_human <kb_value>
+format_kb_to_human() {
+    local kb="$1"
+    if ((kb > 1048576)); then
+        echo "$((kb / 1048576))GB"
+    elif ((kb > 1024)); then
+        echo "$((kb / 1024))MB"
+    else
+        echo "${kb}KB"
+    fi
+}
+
+# Parse human-readable size to KB
+# Usage: parse_size_to_kb <size_string>
+# Examples: "2.3GB" -> 2411724, "500MB" -> 512000, "1024KB" -> 1024, "100B" -> 0
+parse_size_to_kb() {
+    local size_str="$1"
+
+    # Remove spaces and convert to uppercase
+    size_str=$(echo "$size_str" | tr -d ' ' | tr '[:lower:]' '[:upper:]')
+
+    # Extract number and unit
+    local number unit
+    if [[ "$size_str" =~ ^([0-9.]+)([A-Z]+)$ ]]; then
+        number="${BASH_REMATCH[1]}"
+        unit="${BASH_REMATCH[2]}"
+    else
+        echo "0"
+        return
+    fi
+
+    # Convert to KB based on unit
+    case "$unit" in
+        GB|G)
+            # GB to KB: multiply by 1024*1024
+            echo "$number" | awk '{printf "%d", $1 * 1048576}'
+            ;;
+        MB|M)
+            # MB to KB: multiply by 1024
+            echo "$number" | awk '{printf "%d", $1 * 1024}'
+            ;;
+        KB|K)
+            # Already in KB
+            echo "$number" | awk '{printf "%d", $1}'
+            ;;
+        B|BYTES)
+            # Bytes to KB: divide by 1024 (rounded down)
+            echo "$number" | awk '{printf "%d", $1 / 1024}'
+            ;;
+        *)
+            echo "0"
+            ;;
+    esac
+}
+
+# Track freed space and add to running total
+# Usage: track_freed_space <size_before>
+track_freed_space() {
+    local size_before="$1"
+    local before_kb
+
+    before_kb=$(parse_size_to_kb "$size_before")
+
+    if [[ $before_kb -gt 0 ]]; then
+        TOTAL_SPACE_FREED_KB=$((TOTAL_SPACE_FREED_KB + before_kb))
+        log_debug "Tracked ${size_before} (${before_kb}KB) - Total: $(format_kb_to_human $TOTAL_SPACE_FREED_KB)"
+    fi
+}
+
+# ============================================================
 # BANNER / UI
 # ============================================================
 
