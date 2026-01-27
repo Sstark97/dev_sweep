@@ -189,6 +189,38 @@ function test_gradle_complete_cleanup_respects_user_cancellation() {
     assert_successful_code 0
 }
 
+function test_node_cache_cleanup_requires_confirmation() {
+    # Node.js cache cleanup should require confirmation when FORCE=false
+    # With FORCE=true (default in tests), should auto-confirm
+    FORCE=true
+    clear_node_package_caches
+    assert_successful_code "$?"
+}
+
+function test_nvm_cache_cleanup_requires_confirmation() {
+    # NVM cache cleanup should require confirmation when FORCE=false
+    # With FORCE=true (default in tests), should auto-confirm
+    FORCE=true
+    clear_nvm_cache
+    assert_successful_code "$?"
+}
+
+function test_sdkman_cleanup_requires_confirmation() {
+    # SDKMAN cleanup should require confirmation when FORCE=false
+    # With FORCE=true (default in tests), should auto-confirm
+    FORCE=true
+    clear_sdkman_temp_files
+    assert_successful_code "$?"
+}
+
+function test_python_cache_cleanup_requires_confirmation() {
+    # Python cache cleanup should require confirmation when FORCE=false
+    # With FORCE=true (default in tests), should auto-confirm
+    FORCE=true
+    clear_python_package_caches
+    assert_successful_code "$?"
+}
+
 # ============================================================
 # FORCE MODE TESTS
 # ============================================================

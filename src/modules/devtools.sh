@@ -138,12 +138,44 @@ function clear_node_package_caches() {
     log_info "Clearing Node.js package caches..."
 
     local cleaned=false
+    local total_size="0B"
+
+    # Check what's available and estimate size
+    if [[ -d "$NPM_CACHE_PATH" ]]; then
+        total_size=$(get_size "$NPM_CACHE_PATH")
+    fi
+
+    # Check if there's anything to clean
+    local has_npm=false
+    local has_yarn=false
+    local has_pnpm=false
+
+    if [[ -d "$NPM_CACHE_PATH" ]] || command -v npm >/dev/null 2>&1; then
+        has_npm=true
+    fi
+
+    if command -v yarn >/dev/null 2>&1; then
+        has_yarn=true
+    fi
+
+    if command -v pnpm >/dev/null 2>&1; then
+        has_pnpm=true
+    fi
+
+    if [[ "$has_npm" == false ]] && [[ "$has_yarn" == false ]] && [[ "$has_pnpm" == false ]]; then
+        log_info "No Node.js caches found"
+        return 0
+    fi
+
+    log_info "Node.js caches: $total_size"
+
+    if ! confirm_action "Clear Node.js caches ($total_size)?"; then
+        log_info "Node.js cache cleanup skipped"
+        return 0
+    fi
 
     # NPM cache
     if [[ -d "$NPM_CACHE_PATH" ]]; then
-        local npm_size
-        npm_size=$(get_size "$NPM_CACHE_PATH")
-        log_info "NPM cache: $npm_size"
         safe_rm "$NPM_CACHE_PATH" "NPM cache"
         cleaned=true
     fi
@@ -195,6 +227,12 @@ function clear_nvm_cache() {
     fi
 
     log_info "NVM cache: $nvm_size"
+
+    if ! confirm_action "Clear NVM cache ($nvm_size)?"; then
+        log_info "NVM cache cleanup skipped"
+        return 0
+    fi
+
     safe_rm "$NVM_CACHE_PATH" "NVM cache"
     log_success "NVM cache cleared ($nvm_size freed)"
 }
@@ -222,6 +260,12 @@ function clear_sdkman_temp_files() {
     fi
 
     log_info "SDKMAN temp: $sdkman_size"
+
+    if ! confirm_action "Clear SDKMAN temp files ($sdkman_size)?"; then
+        log_info "SDKMAN temp cleanup skipped"
+        return 0
+    fi
+
     safe_rm "$SDKMAN_TMP_PATH" "SDKMAN temp files"
     log_success "SDKMAN temp files cleared ($sdkman_size freed)"
 }
@@ -234,6 +278,28 @@ function clear_sdkman_temp_files() {
 # Returns: 0 on success
 function clear_python_package_caches() {
     log_info "Clearing Python package caches..."
+
+    # Check if there's anything to clean
+    local has_pip=false
+    local has_poetry=false
+
+    if command -v pip3 >/dev/null 2>&1; then
+        has_pip=true
+    fi
+
+    if command -v poetry >/dev/null 2>&1; then
+        has_poetry=true
+    fi
+
+    if [[ "$has_pip" == false ]] && [[ "$has_poetry" == false ]]; then
+        log_info "No Python package managers found"
+        return 0
+    fi
+
+    if ! confirm_action "Clear Python package caches?"; then
+        log_info "Python cache cleanup skipped"
+        return 0
+    fi
 
     local cleaned=false
 
