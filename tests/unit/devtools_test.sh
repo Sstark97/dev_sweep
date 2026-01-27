@@ -189,6 +189,131 @@ function test_gradle_complete_cleanup_respects_user_cancellation() {
     assert_successful_code 0
 }
 
+function test_node_cache_cleanup_proceeds_when_user_confirms() {
+    # Given: User auto-confirms via FORCE flag
+    FORCE=true
+    
+    # When: Node.js cache cleanup is executed
+    clear_node_package_caches
+    
+    # Then: Should complete successfully without errors
+    assert_successful_code "$?"
+}
+
+function test_node_cache_cleanup_skips_gracefully_when_user_declines() {
+    # Given: User will decline the confirmation
+    FORCE=false
+    
+    # When: Node cache cleanup is executed with user declining
+    # Mock confirm_action to simulate user saying "no"
+    confirm_action() { 
+        log_info "Action cancelled by user"
+        return 1
+    }
+    
+    clear_node_package_caches
+    local exit_code=$?
+    
+    # Then: Should return success (0) indicating graceful skip
+    assert_equals "0" "$exit_code"
+    
+    # Cleanup: Restore original confirm_action function
+    unset -f confirm_action
+}
+
+function test_nvm_cache_cleanup_proceeds_when_user_confirms() {
+    # Given: User auto-confirms via FORCE flag
+    FORCE=true
+    
+    # When: NVM cache cleanup is executed
+    clear_nvm_cache
+    
+    # Then: Should complete successfully without errors
+    assert_successful_code "$?"
+}
+
+function test_nvm_cache_cleanup_skips_gracefully_when_user_declines() {
+    # Given: User will decline the confirmation
+    FORCE=false
+    
+    # When: NVM cache cleanup is executed with user declining
+    confirm_action() { 
+        log_info "Action cancelled by user"
+        return 1
+    }
+    
+    clear_nvm_cache
+    local exit_code=$?
+    
+    # Then: Should return success (0) indicating graceful skip
+    assert_equals "0" "$exit_code"
+    
+    # Cleanup: Restore original function
+    unset -f confirm_action
+}
+
+function test_sdkman_cleanup_proceeds_when_user_confirms() {
+    # Given: User auto-confirms via FORCE flag
+    FORCE=true
+    
+    # When: SDKMAN temp cleanup is executed
+    clear_sdkman_temp_files
+    
+    # Then: Should complete successfully without errors
+    assert_successful_code "$?"
+}
+
+function test_sdkman_cleanup_skips_gracefully_when_user_declines() {
+    # Given: User will decline the confirmation
+    FORCE=false
+    
+    # When: SDKMAN cleanup is executed with user declining
+    confirm_action() { 
+        log_info "Action cancelled by user"
+        return 1
+    }
+    
+    clear_sdkman_temp_files
+    local exit_code=$?
+    
+    # Then: Should return success (0) indicating graceful skip
+    assert_equals "0" "$exit_code"
+    
+    # Cleanup: Restore original function
+    unset -f confirm_action
+}
+
+function test_python_cache_cleanup_proceeds_when_user_confirms() {
+    # Given: User auto-confirms via FORCE flag
+    FORCE=true
+    
+    # When: Python cache cleanup is executed
+    clear_python_package_caches
+    
+    # Then: Should complete successfully without errors
+    assert_successful_code "$?"
+}
+
+function test_python_cache_cleanup_skips_gracefully_when_user_declines() {
+    # Given: User will decline the confirmation
+    FORCE=false
+    
+    # When: Python cache cleanup is executed with user declining
+    confirm_action() { 
+        log_info "Action cancelled by user"
+        return 1
+    }
+    
+    clear_python_package_caches
+    local exit_code=$?
+    
+    # Then: Should return success (0) indicating graceful skip
+    assert_equals "0" "$exit_code"
+    
+    # Cleanup: Restore original function
+    unset -f confirm_action
+}
+
 # ============================================================
 # FORCE MODE TESTS
 # ============================================================
