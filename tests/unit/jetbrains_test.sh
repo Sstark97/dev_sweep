@@ -347,3 +347,118 @@ function test_complete_cleanup_removes_old_keeps_latest() {
     assert_directory_exists "$JB_PATH/Rider2024.2"
     assert_directory_exists "$JB_PATH/WebStorm2024.1"
 }
+
+# ============================================================
+# COMPATIBILIDAD CON BASH 3.2 (macOS DEFAULT)
+# ============================================================
+# Tests específicos para verificar compatibilidad con Bash 3.2
+# que no soporta: ${array[@]:offset:length} ni ${array[-1]}
+
+function test_bash_32_compatibility_two_versions() {
+    # Verifica que con 2 versiones, se mantiene solo la última
+    mkdir -p "$JB_PATH/Rider2024.1"
+    mkdir -p "$JB_PATH/Rider2024.2"
+
+    local result
+    result=$(find_outdated_ide_versions "Rider")
+
+    # Debe devolver solo la primera versión (no la última)
+    local -a outdated=()
+    while IFS= read -r line; do
+        if [[ -n "$line" ]]; then
+            outdated+=("$line")
+        fi
+    done <<< "$result"
+
+    # Solo debe haber 1 versión antigua
+    assert_equals "1" "${#outdated[@]}"
+    assert_contains "Rider2024.1" "${outdated[0]}"
+}
+
+function test_bash_32_compatibility_five_versions() {
+    # Prueba con 5 versiones para verificar iteración correcta
+    mkdir -p "$JB_PATH/IntelliJIdea2020.1"
+    mkdir -p "$JB_PATH/IntelliJIdea2021.1"
+    mkdir -p "$JB_PATH/IntelliJIdea2022.1"
+    mkdir -p "$JB_PATH/IntelliJIdea2023.1"
+    mkdir -p "$JB_PATH/IntelliJIdea2024.1"
+
+    local result
+    result=$(find_outdated_ide_versions "IntelliJIdea")
+
+    local -a outdated=()
+    while IFS= read -r line; do
+        if [[ -n "$line" ]]; then
+            outdated+=("$line")
+        fi
+    done <<< "$result"
+
+    # Debe devolver 4 versiones antiguas (todas excepto 2024.1)
+    assert_equals "4" "${#outdated[@]}"
+    assert_contains "IntelliJIdea2020.1" "${outdated[0]}"
+    assert_contains "IntelliJIdea2021.1" "${outdated[1]}"
+    assert_contains "IntelliJIdea2022.1" "${outdated[2]}"
+    assert_contains "IntelliJIdea2023.1" "${outdated[3]}"
+}
+
+function test_bash_32_last_element_access_is_correct() {
+    # Verifica que ${array[$last_index]} funciona correctamente
+    mkdir -p "$JB_PATH/WebStorm2022.1"
+    mkdir -p "$JB_PATH/WebStorm2023.1"
+    mkdir -p "$JB_PATH/WebStorm2024.1"
+
+    DRY_RUN=false
+
+    remove_old_ide_versions "WebStorm"
+
+    # La última versión (2024.1) debe ser la única que se mantiene
+    assert_directory_not_exists "$JB_PATH/WebStorm2022.1"
+    assert_directory_not_exists "$JB_PATH/WebStorm2023.1"
+    assert_directory_exists "$JB_PATH/WebStorm2024.1"
+}
+
+function test_bash_32_loop_iteration_excludes_last_correctly() {
+    # Verifica que el bucle for itera correctamente hasta last_index-1
+    mkdir -p "$JB_PATH/PyCharm2023.1"
+    mkdir -p "$JB_PATH/PyCharm2023.2"
+    mkdir -p "$JB_PATH/PyCharm2023.3"
+    mkdir -p "$JB_PATH/PyCharm2024.1"
+
+    local result
+    result=$(find_outdated_ide_versions "PyCharm")
+
+    # Contar cuántas líneas devuelve
+    local count
+    count=$(echo "$result" | grep -c "PyCharm" || echo "0")
+
+    # Debe devolver exactamente 3 versiones (todas menos la última)
+    assert_equals "3" "$count"
+
+    # La versión más nueva NO debe estar en el resultado
+    assert_not_contains "PyCharm2024.1" "$result"
+}
+
+function test_bash_32_single_version_edge_case() {
+    # Edge case: con 1 sola versión, el índice es 0
+    # last_index = 0, el bucle for no debe ejecutarse (i < 0 es falso)
+    mkdir -p "$JB_PATH/CLion2024.1"
+
+    local result
+    result=$(find_outdated_ide_versions "CLion")
+
+    # No debe devolver nada (la única versión se mantiene)
+    assert_empty "$result"
+}
+
+function test_bash_32_array_arithmetic_with_zero() {
+    # Verifica que last_index = version_count - 1 funciona con version_count = 1
+    mkdir -p "$JB_PATH/GoLand2024.1"
+
+    DRY_RUN=false
+
+    remove_old_ide_versions "GoLand"
+
+    # Con una sola versión, debe mantenerse
+    assert_directory_exists "$JB_PATH/GoLand2024.1"
+    assert_successful_code "$?"
+}
