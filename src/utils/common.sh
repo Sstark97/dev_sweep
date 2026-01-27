@@ -398,13 +398,26 @@ print_banner() {
 
 # Print completion message
 print_completion() {
-    local freed_space="${1:-Unknown}"
+    local freed_space
+
+    if [[ $TOTAL_SPACE_FREED_KB -gt 0 ]]; then
+        freed_space=$(format_kb_to_human "$TOTAL_SPACE_FREED_KB")
+    else
+        freed_space=""
+    fi
+
     echo ""
     echo -e "${GREEN}╭─────────────────────────────────────────╮${NC}"
     echo -e "${GREEN}│${NC}           ${GREEN}✨ CLEANUP COMPLETE ✨${NC}         ${GREEN}│${NC}"
-    if [[ "$freed_space" != "Unknown" ]]; then
-        echo -e "${GREEN}│${NC}      ${CYAN}Estimated space freed: ${freed_space}${NC}    ${GREEN}│${NC}"
+
+    if [[ -n "$freed_space" ]]; then
+        echo -e "${GREEN}│${NC}      ${CYAN}Total space freed: ${freed_space}${NC}       ${GREEN}│${NC}"
+    else
+        if [[ "$DRY_RUN" == true ]]; then
+            echo -e "${GREEN}│${NC}   ${CYAN}No space freed (dry-run mode)${NC}       ${GREEN}│${NC}"
+        fi
     fi
+
     echo -e "${GREEN}╰─────────────────────────────────────────╯${NC}"
     echo ""
 }
