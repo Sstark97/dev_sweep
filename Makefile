@@ -1,4 +1,4 @@
-.PHONY: help install install-local uninstall uninstall-local test test-unit test-integration lint check clean setup install-bashunit release tag formula test-formula publish
+.PHONY: help install install-local uninstall uninstall-local test test-unit test-e2e test-integration lint check clean setup install-bashunit release tag formula test-formula publish
 
 # ============================================================
 # VARIABLES
@@ -43,6 +43,7 @@ help:
 	@echo "$(GREEN)Testing:$(NC)"
 	@echo "  make test               - Run all tests"
 	@echo "  make test-unit          - Run unit tests only"
+	@echo "  make test-e2e           - Run end-to-end tests only"
 	@echo "  make test-integration   - Run integration tests only"
 	@echo ""
 	@echo "$(GREEN)Quality:$(NC)"
@@ -84,7 +85,7 @@ install-bashunit:
 # ============================================================
 # TESTING
 # ============================================================
-test: test-unit
+test: test-unit test-e2e
 	@echo "$(GREEN)✓ All tests passed$(NC)"
 
 test-unit:
@@ -96,6 +97,21 @@ test-unit:
 	else \
 		echo "$(YELLOW)⚠ bashunit not found. Run 'make install-bashunit' first.$(NC)"; \
 		exit 1; \
+	fi
+
+test-e2e:
+	@echo "$(BLUE)Running end-to-end tests...$(NC)"
+	@if [ -d tests/e2e ] && [ -n "$$(ls -A tests/e2e/*.sh 2>/dev/null)" ]; then \
+		if command -v bashunit >/dev/null 2>&1; then \
+			bashunit tests/e2e/; \
+		elif [ -f ./bashunit ]; then \
+			./bashunit tests/e2e/; \
+		else \
+			echo "$(YELLOW)⚠ bashunit not found$(NC)"; \
+			exit 1; \
+		fi \
+	else \
+		echo "$(YELLOW)ℹ No e2e tests found - skipping$(NC)"; \
 	fi
 
 test-integration:

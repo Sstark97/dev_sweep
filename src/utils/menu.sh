@@ -179,3 +179,21 @@ toggle_bool() {
         echo true
     fi
 }
+
+# Ask if user wants to run another cleanup
+# Returns: 0 if yes, 1 if no
+ask_continue_cleanup() {
+    echo ""
+    echo -en "${CYAN}Run another cleanup?${NC} [y/N]: "
+    read -r response
+
+    case "$response" in
+        [yY]|[yY][eE][sS])
+            return 0
+            ;;
+        *)
+            log_info "Exiting DevSweep"
+            return 1
+            ;;
+    esac
+}
