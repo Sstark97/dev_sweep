@@ -79,7 +79,7 @@ show_help() {
     echo "    -v, --version       Show version information"
     echo "    -d, --dry-run       Preview actions without deleting files"
     echo "    --verbose           Show detailed output"
-    echo "    -f, --force         Skip all confirmations (dangerous!)"
+    echo "    -f, --force, -y, --yes    Skip all confirmations (dangerous!)"
     echo ""
     echo -e "${CYAN}MODULES:${NC}"
     echo "    --jetbrains         Clean JetBrains IDEs (old versions & caches)"
@@ -161,7 +161,7 @@ parse_arguments() {
                 log_debug "Verbose mode enabled"
                 shift
                 ;;
-            -f|--force)
+            -f|--force|-y|--yes)
                 FORCE=true
                 log_warn "Force mode enabled - confirmations will be skipped!"
                 shift
