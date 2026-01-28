@@ -14,8 +14,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Syntax check
+        run: make check
+      
       - name: Install bashunit
         run: make install-bashunit
       
       - name: Run tests
         run: make test
+      
+      - name: Lint with shellcheck
+        run: |
+          if command -v shellcheck >/dev/null 2>&1; then
+            make lint
+          else
+            echo "shellcheck not available, skipping lint"
+          fi
+        continue-on-error: true
