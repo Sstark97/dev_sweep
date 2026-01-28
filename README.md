@@ -245,6 +245,21 @@ dev_sweep/
 
 ## 🔄 For Maintainers
 
+### Branch Protection Setup
+
+To enforce code quality, configure branch protection rules for the `main` branch:
+
+1. Go to **Settings** → **Branches** → **Branch protection rules**
+2. Click **Add rule** for `main` branch
+3. Configure the following settings:
+   - ✅ **Require a pull request before merging**
+   - ✅ **Require status checks to pass before merging**
+     - Add required check: `test` (from Tests workflow)
+   - ✅ **Require branches to be up to date before merging**
+   - ✅ **Do not allow bypassing the above settings** (recommended)
+
+This ensures that all PRs must pass the automated test suite before they can be merged.
+
 ### Creating a Release
 
 ```bash
