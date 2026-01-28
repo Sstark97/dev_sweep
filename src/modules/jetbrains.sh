@@ -7,13 +7,10 @@
 set -euo pipefail
 
 # ============================================================
-# CONSTANTES DEL MÓDULO
+# MODULE CONSTANTS
 # ============================================================
 
-# Número mínimo de versiones a mantener (siempre guardamos la última)
 readonly MINIMUM_IDE_VERSIONS_TO_KEEP=1
-
-# Profundidad de búsqueda en el directorio de JetBrains
 readonly IDE_SEARCH_DEPTH=1
 
 # ============================================================
