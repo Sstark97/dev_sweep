@@ -9,6 +9,8 @@ on:
 jobs:
   test:
     runs-on: macos-latest
+    permissions:
+      contents: read
     
     steps:
       - name: Checkout code
