@@ -304,9 +304,22 @@ assert_have_been_called_with safe_rm "/path/to/file"
 
 ## Pull Request Guidelines
 
+### Automated Testing
+
+All pull requests are automatically tested using GitHub Actions. The CI/CD pipeline:
+- Runs on every PR to `main` branch
+- Executes all unit and end-to-end tests
+- Must pass before the PR can be merged
+- Shows results as a status check in the PR
+
+You can view the workflow status:
+- In the PR checks section
+- On the Actions tab: https://github.com/Sstark97/dev_sweep/actions
+
 ### PR Checklist
 
-- [ ] Tests pass (`make test`)
+- [ ] Tests pass locally (`make test`)
+- [ ] CI/CD pipeline passes (GitHub Actions)
 - [ ] Syntax checks pass (`make check`)
 - [ ] Code follows style guide
 - [ ] All functions have tests

@@ -10,7 +10,7 @@
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Bash](https://img.shields.io/badge/Bash-5.0+-blue.svg)](https://www.gnu.org/software/bash/)
   [![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
-  [![Tests](https://img.shields.io/badge/Tests-101%20passing-brightgreen.svg)](tests/)
+  [![Tests](https://github.com/Sstark97/dev_sweep/actions/workflows/test.yml/badge.svg)](https://github.com/Sstark97/dev_sweep/actions/workflows/test.yml)
 </div>
 
 ---
