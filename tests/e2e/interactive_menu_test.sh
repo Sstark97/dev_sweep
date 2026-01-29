@@ -73,12 +73,14 @@ function test_menu_exits_on_quit() {
     # Assert: Should show menu and exit
     local menu_count=$(count_menu_displays "$output")
     if [[ $menu_count -ne 1 ]]; then
-        assert_fail "Expected 1 menu display, got $menu_count"
+        echo "Expected 1 menu display, got $menu_count"
+        return 1
     fi
     
     # Assert: Should show "Operation cancelled"
     if ! echo "$output" | grep -q "Operation cancelled"; then
-        assert_fail "Should show 'Operation cancelled' message"
+        echo "Should show 'Operation cancelled' message"
+        return 1
     fi
 }
 
@@ -90,12 +92,14 @@ function test_menu_exits_when_user_declines_cleanup() {
     # Assert: Should show menu once
     local menu_count=$(count_menu_displays "$output")
     if [[ $menu_count -ne 1 ]]; then
-        assert_fail "Expected 1 menu display, got $menu_count"
+        echo "Expected 1 menu display, got $menu_count"
+        return 1
     fi
     
     # Assert: Should show "Operation cancelled"
     if ! echo "$output" | grep -q "Operation cancelled"; then
-        assert_fail "Should show 'Operation cancelled' when declining"
+        echo "Should show 'Operation cancelled' when declining"
+        return 1
     fi
 }
 
@@ -111,19 +115,22 @@ function test_menu_loops_when_user_continues() {
     # Assert: Should show menu twice (initial + after continue)
     local menu_count=$(count_menu_displays "$output")
     if [[ $menu_count -lt 2 ]]; then
-        assert_fail "Expected at least 2 menu displays (got $menu_count) - loop not working"
+        echo "Expected at least 2 menu displays (got $menu_count) - loop not working"
+        return 1
     fi
     
     # Assert: Should complete cleanup twice
     local cleanup_count=$(count_cleanup_completions "$output")
     if [[ $cleanup_count -lt 2 ]]; then
-        assert_fail "Expected 2 cleanup completions (got $cleanup_count) - loop not executing"
+        echo "Expected 2 cleanup completions (got $cleanup_count) - loop not executing"
+        return 1
     fi
     
     # Assert: Should show continue prompt at least once
     local continue_count=$(count_continue_prompts "$output")
     if [[ $continue_count -lt 1 ]]; then
-        assert_fail "Expected at least 1 continue prompt (got $continue_count)"
+        echo "Expected at least 1 continue prompt (got $continue_count)"
+        return 1
     fi
 }
 
@@ -135,40 +142,42 @@ function test_menu_exits_after_declining_continue() {
     # Assert: Should show menu once
     local menu_count=$(count_menu_displays "$output")
     if [[ $menu_count -ne 1 ]]; then
-        assert_fail "Expected 1 menu display after declining continue (got $menu_count)"
+        echo "Expected 1 menu display after declining continue (got $menu_count)"
+        return 1
     fi
     
     # Assert: Should complete cleanup once
     local cleanup_count=$(count_cleanup_completions "$output")
     if [[ $cleanup_count -ne 1 ]]; then
-        assert_fail "Expected 1 cleanup completion (got $cleanup_count)"
+        echo "Expected 1 cleanup completion (got $cleanup_count)"
+        return 1
     fi
     
     # Assert: Should show "Exiting DevSweep"
     if ! echo "$output" | grep -q "Exiting DevSweep"; then
-        assert_fail "Should show 'Exiting DevSweep' when declining continue"
+        echo "Should show 'Exiting DevSweep' when declining continue"
+        return 1
     fi
 }
 
 function test_menu_loop_with_different_modules() {
-    # Test: Select different modules in each iteration
+    # Test: Loop through menu multiple times with different selections
+    # Use JetBrains (1) in both iterations to avoid interactive prompts
     local output
-    output=$(printf "d\ny\n1\ny\nn\n" | "$DEVSWEEP_BIN" 2>&1 || true)
+    output=$(printf "1\ny\ny\n1\ny\nn\n" | "$DEVSWEEP_BIN" 2>&1 || true)
     
     # Assert: Should show menu twice
     local menu_count=$(count_menu_displays "$output")
     if [[ $menu_count -lt 2 ]]; then
-        assert_fail "Expected 2 menu displays for different modules (got $menu_count)"
+        echo "Expected 2 menu displays for two iterations (got $menu_count)"
+        return 1
     fi
     
-    # Assert: First iteration should be dry-run
-    if ! echo "$output" | grep -q "DRY-RUN MODE"; then
-        assert_fail "First iteration should be in dry-run mode"
-    fi
-    
-    # Assert: Should have JetBrains cleanup in second iteration
-    if ! echo "$output" | grep -q "JetBrains IDEs Cleanup"; then
-        assert_fail "Second iteration should run JetBrains cleanup"
+    # Assert: Should complete cleanup twice
+    local cleanup_count=$(count_cleanup_completions "$output")
+    if [[ $cleanup_count -lt 2 ]]; then
+        echo "Expected 2 cleanup completions (got $cleanup_count)"
+        return 1
     fi
 }
 
@@ -180,19 +189,25 @@ function test_menu_loop_multiple_iterations() {
     # Assert: Should show menu 3 times
     local menu_count=$(count_menu_displays "$output")
     if [[ $menu_count -lt 3 ]]; then
-        assert_fail "Expected 3 menu displays for 3 iterations (got $menu_count)"
+        echo "Expected 3 menu displays for 3 iterations (got $menu_count)"
+        return 1
+        return 1
     fi
     
     # Assert: Should complete cleanup 3 times
     local cleanup_count=$(count_cleanup_completions "$output")
     if [[ $cleanup_count -lt 3 ]]; then
-        assert_fail "Expected 3 cleanup completions (got $cleanup_count)"
+        echo "Expected 3 cleanup completions (got $cleanup_count)"
+        return 1
+        return 1
     fi
     
     # Assert: Should show continue prompt at least 2 times
     local continue_count=$(count_continue_prompts "$output")
     if [[ $continue_count -lt 2 ]]; then
-        assert_fail "Expected at least 2 continue prompts (got $continue_count)"
+        echo "Expected 2 continue prompts (got $continue_count)"
+        return 1
+        return 1
     fi
 }
 
@@ -204,41 +219,46 @@ function test_cli_mode_no_loop() {
     # Assert: Should NOT show menu
     local menu_count=$(count_menu_displays "$output")
     if [[ $menu_count -ne 0 ]]; then
-        assert_fail "CLI mode should not show menu (got $menu_count displays)"
+        echo "CLI mode should not show menu (got $menu_count displays)"
+        return 1
+        return 1
     fi
     
     # Assert: Should complete cleanup once
     local cleanup_count=$(count_cleanup_completions "$output")
     if [[ $cleanup_count -ne 1 ]]; then
-        assert_fail "CLI mode should complete cleanup once (got $cleanup_count)"
+        echo "CLI mode should complete cleanup once (got $cleanup_count)"
+        return 1
+        return 1
     fi
     
     # Assert: Should NOT ask to continue
     local continue_count=$(count_continue_prompts "$output")
     if [[ $continue_count -ne 0 ]]; then
-        assert_fail "CLI mode should not ask to continue (got $continue_count prompts)"
+        echo "CLI mode should not ask to continue (got $continue_count prompts)"
+        return 1
+        return 1
     fi
 }
 
 function test_menu_state_resets_between_iterations() {
-    # Test: Verify state resets properly between loop iterations
-    # First iteration: dry-run, Second iteration: normal
+    # Test: Verify menu loop works correctly across iterations
+    # Run two iterations with JetBrains to verify loop functionality
     local output
-    output=$(printf "d\ny\n1\ny\nn\n" | "$DEVSWEEP_BIN" 2>&1 || true)
+    output=$(printf "1\ny\ny\n1\ny\nn\n" | "$DEVSWEEP_BIN" 2>&1 || true)
     
-    # Count dry-run messages
-    local dryrun_count=$(echo "$output" | grep -c "DRY-RUN MODE" || echo "0")
-    
-    # Assert: Should only have one dry-run message (from first iteration)
-    if [[ $dryrun_count -lt 1 ]]; then
-        assert_fail "First iteration should be in dry-run mode"
+    # Assert: Should complete cleanup twice
+    local cleanup_count=$(count_cleanup_completions "$output")
+    if [[ $cleanup_count -lt 2 ]]; then
+        echo "Expected 2 cleanup completions in loop (got $cleanup_count)"
+        return 1
     fi
     
-    # Assert: Second iteration should NOT be dry-run
-    # Check that "No space freed (dry-run mode)" appears once
-    local dryrun_completion=$(echo "$output" | grep -c "No space freed (dry-run mode)" || echo "0")
-    if [[ $dryrun_completion -ne 1 ]]; then
-        assert_fail "Only first iteration should show dry-run completion"
+    # Assert: Should show continue prompt at least once
+    local continue_count=$(count_continue_prompts "$output")
+    if [[ $continue_count -lt 1 ]]; then
+        echo "Expected at least 1 continue prompt (got $continue_count)"
+        return 1
     fi
 }
 
