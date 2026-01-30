@@ -338,6 +338,8 @@ Coverage:   All modules tested, following testing pyramid
 
 - [ ] Add more modules (Xcode, Gradle)
 - [ ] Windows Support: Planning a rewrite in .NET 10 Native AOT for cross-platform compatibility
+- [ ] MCP Server Integration (AI Agent Support) - Planned for v2 (.NET)
+
 
 ## 🤝 Contributing
 
