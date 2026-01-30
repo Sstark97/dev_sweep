@@ -23,9 +23,15 @@ readonly SCRIPT_NAME="DevSweep"
 DRY_RUN=false
 VERBOSE=false
 FORCE=false
+ANALYZE_MODE=false
 
 # Space tracking (accumulated across all cleanup operations)
 TOTAL_SPACE_FREED_KB=0
+
+# Analysis tracking (for --analyze mode)
+# Associative structure: module_name -> array of items to clean
+# Each item: "description|size_kb"
+declare -a ANALYZE_ITEMS=()
 
 # ============================================================
 # PATH CONSTANTS
