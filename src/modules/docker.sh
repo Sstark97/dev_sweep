@@ -61,10 +61,10 @@ function estimate_reclaimable_docker_space() {
 # Detiene y remueve contenedores que no están en uso
 # Returns: 0 on success
 function remove_stopped_containers() {
-    log_info "Removing stopped containers..."
+    log_cleanup_info "Removing stopped containers..."
 
     if ! is_docker_available; then
-        log_warn "Docker is not running or not installed"
+        log_cleanup_info "Docker is not running or not installed"
         return 0
     fi
 
@@ -72,7 +72,13 @@ function remove_stopped_containers() {
     stopped_count=$(docker ps -a --filter "status=exited" -q 2>/dev/null | wc -l | tr -d ' ')
 
     if [[ "$stopped_count" -eq 0 ]]; then
-        log_info "No stopped containers to remove"
+        log_cleanup_info "No stopped containers to remove"
+        return 0
+    fi
+
+    # In analyze mode, collect info
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        add_analyze_item "Docker" "$stopped_count stopped containers" "~$((stopped_count * 10))MB"
         return 0
     fi
 
@@ -92,7 +98,7 @@ function remove_stopped_containers() {
 # Remueve imágenes de Docker que no están en uso
 # Returns: 0 on success
 function remove_dangling_docker_images() {
-    log_info "Removing dangling Docker images..."
+    log_cleanup_info "Removing dangling Docker images..."
 
     if ! is_docker_available; then
         return 0
@@ -102,7 +108,14 @@ function remove_dangling_docker_images() {
     dangling_count=$(docker images -f "dangling=true" -q 2>/dev/null | wc -l | tr -d ' ')
 
     if [[ "$dangling_count" -eq 0 ]]; then
-        log_info "No dangling images to remove"
+        log_cleanup_info "No dangling images to remove"
+        return 0
+    fi
+
+    # In analyze mode, estimate size dynamically
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        local estimated_size="~$((dangling_count * 100))MB"
+        add_analyze_item "Docker" "$dangling_count dangling images" "$estimated_size"
         return 0
     fi
 
@@ -120,17 +133,28 @@ function remove_dangling_docker_images() {
 }
 
 # Limpia volúmenes de Docker no utilizados
+# In ANALYZE_MODE: Counts but doesn't remove
 # Returns: 0 on success
 function prune_unused_docker_volumes() {
-    log_info "Pruning unused Docker volumes..."
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        log_info "Pruning unused Docker volumes..."
+    fi
 
     if ! is_docker_available; then
         return 0
     fi
 
+    local volume_count
+    volume_count=$(docker volume ls -q 2>/dev/null | wc -l | tr -d ' ')
+
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        if [[ "$volume_count" -gt 0 ]]; then
+            add_analyze_item "Docker" "$volume_count unused volumes" "~$((volume_count * 10))MB"
+        fi
+        return 0
+    fi
+
     if [[ "$DRY_RUN" == true ]]; then
-        local volume_count
-        volume_count=$(docker volume ls -q 2>/dev/null | wc -l | tr -d ' ')
         log_info "[DRY-RUN] Would prune unused volumes (total: $volume_count)"
         return 0
     fi
@@ -146,9 +170,19 @@ function prune_unused_docker_volumes() {
 # Limpia la caché de construcción de Docker
 # Returns: 0 on success
 function clear_docker_build_cache() {
-    log_info "Clearing Docker build cache..."
+    log_cleanup_info "Clearing Docker build cache..."
 
     if ! is_docker_available; then
+        return 0
+    fi
+
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        # Get actual build cache size from docker system df
+        local cache_size
+        cache_size=$(docker system df 2>/dev/null | grep "Build Cache" | awk '{print $4}' || echo "0B")
+        if [[ "$cache_size" != "0B" ]]; then
+            add_analyze_item "Docker" "Build cache" "$cache_size"
+        fi
         return 0
     fi
 
@@ -258,10 +292,15 @@ function cleanup_docker_safely() {
 # Usage: docker_clean
 # Returns: 0 on success
 function docker_clean() {
-    log_section "Docker & OrbStack Cleanup"
+    log_cleanup_section "Docker & OrbStack Cleanup"
 
-    # Option 1: Safe cleanup
+    # Option 1: Safe cleanup (always run, even in analyze mode)
     cleanup_docker_safely
+
+    # Skip destructive operations and confirmations in analyze mode
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        return 0
+    fi
 
     echo ""
 
