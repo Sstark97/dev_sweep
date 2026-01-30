@@ -40,15 +40,21 @@ function should_clean_maven_cache() {
 # Limpia la caché de dependencias de Maven
 # Returns: 0 on success
 function clear_maven_dependency_cache() {
-    log_info "Clearing Maven dependency cache..."
+    log_cleanup_info "Clearing Maven dependency cache..."
 
     if ! should_clean_maven_cache; then
-        log_info "Maven cache is empty or doesn't exist"
+        log_cleanup_info "Maven cache is empty or doesn't exist"
         return 0
     fi
 
     local cache_size
     cache_size=$(estimate_maven_cache_size)
+    
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        add_analyze_item "Dev Tools" "Maven cache" "$cache_size"
+        return 0
+    fi
+    
     log_info "Current Maven cache: $cache_size"
 
     if ! confirm_action "Clear Maven cache ($cache_size)?"; then
@@ -251,7 +257,7 @@ function get_poetry_cache_info() {
 # Limpia cachés de paquetes de Node.js
 # Returns: 0 on success
 function clear_node_package_caches() {
-    log_info "Clearing Node.js package caches..."
+    log_cleanup_info "Clearing Node.js package caches..."
 
     local cleaned=false
     local cache_summary=""
@@ -302,7 +308,13 @@ function clear_node_package_caches() {
 
     # If no caches found, exit early
     if [[ "$has_cache" == false ]]; then
-        log_info "No Node.js caches found"
+        log_cleanup_info "No Node.js caches found"
+        return 0
+    fi
+
+    # In analyze mode, collect info
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        add_analyze_item "Dev Tools" "Node.js caches ($cache_summary)" "calculated"
         return 0
     fi
 
@@ -508,38 +520,50 @@ function clear_python_package_caches() {
 # Usage: devtools_clean
 # Returns: 0 on success
 function devtools_clean() {
-    log_section "Development Tools Cleanup"
+    log_cleanup_section "Development Tools Cleanup"
 
     # Maven
     clear_maven_dependency_cache
-    echo ""
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        echo ""
+    fi
 
     # Gradle
     remove_outdated_gradle_caches
-    echo ""
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        echo ""
+    fi
     
-    # Optional: Clear complete Gradle cache
-    if [[ "$FORCE" != true ]] && [[ -d "$GRADLE_CACHE_PATH" ]]; then
+    # Optional: Clear complete Gradle cache (skip in analyze mode)
+    if [[ "$ANALYZE_MODE" != true ]] && [[ "$FORCE" != true ]] && [[ -d "$GRADLE_CACHE_PATH" ]]; then
         clear_gradle_cache_completely
         echo ""
     fi
 
     # Node.js
     clear_node_package_caches
-    echo ""
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        echo ""
+    fi
 
     # NVM
     clear_nvm_cache
-    echo ""
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        echo ""
+    fi
 
     # SDKMAN
     clear_sdkman_temp_files
-    echo ""
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        echo ""
+    fi
 
     # Python
     clear_python_package_caches
 
-    log_success "Development tools cleanup completed"
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        log_success "Development tools cleanup completed"
+    fi
     return 0
 }
 
