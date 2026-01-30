@@ -297,6 +297,14 @@ function docker_clean() {
     # Option 1: Safe cleanup (always run, even in analyze mode)
     cleanup_docker_safely
 
+    # Option 2: OrbStack - detect before early return
+    if is_orbstack_installed; then
+        local orbstack_cache="${HOME}/.orbstack/cache"
+        if [[ -d "$orbstack_cache" ]]; then
+            register_if_analyzing "Docker" "OrbStack cache" "$orbstack_cache" && return 0
+        fi
+    fi
+
     # Skip destructive operations and confirmations in analyze mode
     if [[ "$ANALYZE_MODE" == true ]]; then
         return 0
@@ -304,7 +312,7 @@ function docker_clean() {
 
     echo ""
 
-    # Option 2: Deep cleanup (ask user)
+    # Option 3: Deep cleanup (ask user)
     if is_docker_available && [[ "$FORCE" != true ]]; then
         log_warn "Advanced: Complete Docker Desktop reset available"
         log_warn "This will delete ALL containers, images, and volumes"
@@ -315,7 +323,7 @@ function docker_clean() {
         fi
     fi
 
-    # Option 3: OrbStack
+    # Option 4: OrbStack cleanup
     if is_orbstack_installed; then
         echo ""
         cleanup_orbstack_data

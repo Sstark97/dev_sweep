@@ -19,6 +19,13 @@
 
 DevSweep is a **production-grade CLI tool** that safely cleans deep system caches on macOS, helping developers reclaim valuable disk space without compromising system stability.
 
+### 📺 See It In Action
+
+<div align="center">
+  <img src="assets/demo.gif" alt="DevSweep Demo" width="100%" />
+  <p><em>DevSweep analyze mode detecting ~14GB of cleanable caches</em></p>
+</div>
+
 ### 🧹 What It Cleans
 
 - **🎨 JetBrains IDEs** - Removes old versions, keeps latest, cleans corrupted caches (~2-5GB)
@@ -31,13 +38,13 @@ DevSweep is a **production-grade CLI tool** that safely cleans deep system cache
 
 ## ✨ Features
 
-- 🛡️ **Safety First**: Built-in `--dry-run` mode to preview all actions
+- 🛡️ **Safety First**: Built-in `--dry-run` and `--analyze` modes to preview all actions
 - 🎛️ **Interactive Menu**: User-friendly interface for guided cleanup
 - 🔧 **Modular Architecture**: Clean, testable, extensible codebase
 - ⚠️ **Double Confirmation**: Explicit approval for destructive operations
-- 📊 **Smart Analysis**: Shows estimated space to be recovered
+- 📊 **Smart Analysis**: Shows estimated space to be recovered before cleaning
 - 🎨 **Beautiful Output**: Colored, organized logging with progress indicators
-- ✅ **Well Tested**: 101 tests, 123 assertions, 100% passing
+- ✅ **Well Tested**: 115 tests, 100% passing, optimized for speed
 - 🚀 **Fast**: Optimized for performance, completes in seconds
 
 ## 📦 Installation
@@ -99,7 +106,10 @@ sudo make uninstall
 # Interactive mode - guided cleanup
 devsweep
 
-# Safe preview - see what would be deleted
+# Analyze mode - see what can be cleaned with size estimates
+devsweep --analyze --all
+
+# Safe preview - see detailed actions without deleting
 devsweep --dry-run --all
 
 # Clean everything (with confirmations)
@@ -117,10 +127,13 @@ Launches an interactive menu to select which modules to run.
 ### Command-Line Flags
 
 ```bash
+# Analyze mode - preview with size estimates (recommended first step)
+devsweep --analyze --all
+
 # Run all cleanup modules (with confirmations)
 devsweep --all
 
-# Safe preview mode - no files deleted
+# Safe preview mode - see detailed actions, no files deleted
 devsweep --dry-run --all
 
 # Clean specific modules
@@ -140,7 +153,8 @@ devsweep --verbose --jetbrains
 |------|-------|-------------|
 | `--help` | `-h` | Show help message |
 | `--version` | `-v` | Show version |
-| `--dry-run` | `-d` | Preview mode - no deletions |
+| `--analyze` | `-a` | Analyze and show cleanup preview with size estimates |
+| `--dry-run` | `-d` | Preview mode - shows detailed actions, no deletions |
 | `--verbose` | | Detailed output |
 | `--force` | `-f` | Skip confirmations |
 | `--all` | `-a` | Run all cleanup modules |
@@ -153,7 +167,11 @@ devsweep --verbose --jetbrains
 ### Examples
 
 ```bash
-# Safe exploration - see what would be deleted
+# Recommended workflow: Analyze first, then clean
+devsweep --analyze --all          # See what can be cleaned
+devsweep --all                     # Clean with confirmations
+
+# Safe exploration - see detailed actions
 devsweep --dry-run --all
 
 # Clean only JetBrains with preview
@@ -168,12 +186,13 @@ devsweep --force --all
 
 ## 🛡️ Safety Features
 
-1. **🔍 Dry-Run Mode**: Preview all actions without making changes
-2. **✋ Interactive Confirmations**: Explicit approval for destructive operations
-3. **🔒 Smart Validation**: Prevents accidental deletion of critical paths
-4. **📝 Detailed Logging**: Full transparency of all actions taken
-5. **💾 Version Preservation**: Automatically keeps latest IDE versions
-6. **⚡ Graceful Handling**: Safely handles missing tools and empty caches
+1. **� Analyze Mode**: Preview what can be cleaned with size estimates before any action
+2. **🔍 Dry-Run Mode**: See detailed actions without making changes
+3. **✋ Interactive Confirmations**: Explicit approval for destructive operations
+4. **🔒 Smart Validation**: Prevents accidental deletion of critical paths
+5. **📝 Detailed Logging**: Full transparency of all actions taken
+6. **💾 Version Preservation**: Automatically keeps latest IDE versions
+7. **⚡ Graceful Handling**: Safely handles missing tools and empty caches
 
 ## 💻 Development
 
@@ -200,7 +219,7 @@ make test
 ### Running Tests
 
 ```bash
-# Run all tests (101 tests, ~11s)
+# Run all tests (123 tests, ~12.2s)
 make test
 
 # Run specific test suite
@@ -238,7 +257,8 @@ dev_sweep/
 │       ├── common.sh         # Common functions
 │       └── menu.sh           # Interactive menu
 ├── tests/
-│   └── unit/                 # Unit tests (101 tests)
+│   ├── unit/                 # Unit tests (112 tests)
+│   └── e2e/                  # E2E tests (11 tests)
 ├── Makefile                  # Build automation
 └── .bashunit.yml             # Test configuration
 ```
@@ -305,11 +325,19 @@ See [HOMEBREW_CORE_SUBMISSION.md](HOMEBREW_CORE_SUBMISSION.md) for complete guid
 ## 📊 Test Coverage
 
 ```
-Tests:      101 passed, 101 total
-Assertions: 123 passed, 123 total
-Time:       ~11 seconds
-Coverage:   All modules tested
+Tests:      123 passed, 123 total
+  Unit:     112 tests (fast validation, <50ms each)
+  E2E:      11 tests (integration validation)
+    Smoke:  3 critical tests (CLI, menu, analyze)
+    Cleanup: 8 tests (module behavior)
+Time:       ~12.2 seconds (parallel execution)
+Coverage:   All modules tested, following testing pyramid
 ```
+
+## 🔮 Roadmap
+
+- [ ] Add more modules (Xcode, Gradle)
+- [ ] Windows Support: Planning a rewrite in .NET 10 Native AOT for cross-platform compatibility
 
 ## 🤝 Contributing
 

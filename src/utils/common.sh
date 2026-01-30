@@ -482,6 +482,29 @@ add_analyze_item() {
     ANALYZE_ITEMS+=("${module}|${description}|${size}")
 }
 
+# Registers item for analysis if in ANALYZE_MODE, otherwise returns false to continue with cleanup
+# Usage: register_if_analyzing <module_name> <description> <size_or_path>
+# Returns: 0 if analyzing (caller should return), 1 if not analyzing (caller should continue)
+# Example: register_if_analyzing "Docker" "OrbStack cache" "$orbstack_cache" && return 0
+register_if_analyzing() {
+    local module="$1"
+    local description="$2"
+    local size_or_path="$3"
+    
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        return 1  # Not analyzing, continue with cleanup
+    fi
+    
+    # If path is provided and exists, get size; otherwise use as-is
+    local size="$size_or_path"
+    if [[ -e "$size_or_path" ]]; then
+        size=$(get_size "$size_or_path")
+    fi
+    
+    add_analyze_item "$module" "$description" "$size"
+    return 0  # Analyzing, caller should return early
+}
+
 # Display analysis preview in formatted box
 # Shows what would be cleaned grouped by module with size estimates
 # Usage: show_analyze_preview

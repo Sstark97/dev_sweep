@@ -85,7 +85,9 @@ install-bashunit:
 # ============================================================
 # TESTING
 # ============================================================
-test: test-unit test-e2e
+test:
+	@echo "$(BLUE)Running tests in parallel...$(NC)"
+	@$(MAKE) test-unit & $(MAKE) test-e2e & wait
 	@echo "$(GREEN)✓ All tests passed$(NC)"
 
 test-unit:
