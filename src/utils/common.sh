@@ -71,7 +71,45 @@ log_section() {
 # SAFETY WRAPPERS
 # ============================================================
 
-# Safe rm wrapper - respects DRY_RUN flag
+# Executes a cleanup action respecting all modes (ANALYZE, DRY_RUN, normal)
+# In ANALYZE mode: Only collects info, doesn't execute
+# In DRY_RUN mode: Shows what would happen
+# In normal mode: Executes the action
+# Usage: execute_cleanup_action <module_name> <description> <size_estimate> <cleanup_function>
+# Example: execute_cleanup_action "Docker" "stopped containers" "50MB" docker_prune_containers
+execute_cleanup_action() {
+    local module="$1"
+    local description="$2"
+    local size_estimate="$3"
+    local cleanup_function="$4"
+    
+    # In analyze mode, just collect the item
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        add_analyze_item "$module" "$description" "$size_estimate"
+        return 0
+    fi
+    
+    # In dry-run or normal mode, execute the cleanup function
+    "$cleanup_function"
+}
+
+# Conditionally logs info message (suppressed in ANALYZE mode)
+# Usage: log_cleanup_info <message>
+log_cleanup_info() {
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        log_info "$@"
+    fi
+}
+
+# Conditionally logs section header (suppressed in ANALYZE mode)
+# Usage: log_cleanup_section <title>
+log_cleanup_section() {
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        log_section "$@"
+    fi
+}
+
+# Safe rm wrapper - respects DRY_RUN and ANALYZE_MODE flags
 # Usage: safe_rm <target_path> [description]
 safe_rm() {
     local target="$1"
@@ -93,6 +131,12 @@ safe_rm() {
     local size_before="0B"
     if [[ -e "$target" ]]; then
         size_before=$(get_size "$target")
+    fi
+
+    # In analyze mode, don't delete - just return (items should be collected via add_analyze_item separately)
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        log_debug "[ANALYZE] Would delete: $description ($size_before)"
+        return 0
     fi
 
     if [[ "$DRY_RUN" == true ]]; then
@@ -419,5 +463,93 @@ print_completion() {
     fi
 
     echo -e "${GREEN}╰─────────────────────────────────────────╯${NC}"
+    echo ""
+}
+
+# ============================================================
+# ANALYZE MODE FUNCTIONS
+# ============================================================
+
+# Add item to analysis collection
+# Usage: add_analyze_item <module_name> <description> <size_estimate>
+# Example: add_analyze_item "JetBrains" "IntelliJIdea2023.1" "2.4GB"
+add_analyze_item() {
+    local module="$1"
+    local description="$2"
+    local size="$3"
+    
+    # Format: "module|description|size"
+    ANALYZE_ITEMS+=("${module}|${description}|${size}")
+}
+
+# Display analysis preview in formatted box
+# Shows what would be cleaned grouped by module with size estimates
+# Usage: show_analyze_preview
+show_analyze_preview() {
+    if [[ ${#ANALYZE_ITEMS[@]} -eq 0 ]]; then
+        echo ""
+        log_info "No items found to clean"
+        return 0
+    fi
+    
+    # Group items by module
+    declare -A module_items
+    declare -A module_total_kb
+    local total_space_kb=0
+    
+    # Process all items
+    local item
+    for item in "${ANALYZE_ITEMS[@]}"; do
+        IFS='|' read -r module desc size <<< "$item"
+        
+        # Convert size to KB for total calculation
+        local size_kb
+        size_kb=$(parse_size_to_kb "$size")
+        
+        # Add to module group
+        if [[ -z "${module_items[$module]:-}" ]]; then
+            module_items[$module]="$desc ($size)"
+            module_total_kb[$module]=$size_kb
+        else
+            module_items[$module]="${module_items[$module]}"$'\n'"$desc ($size)"
+            module_total_kb[$module]=$((${module_total_kb[$module]} + size_kb))
+        fi
+        
+        total_space_kb=$((total_space_kb + size_kb))
+    done
+    
+    # Display preview box
+    echo ""
+    echo -e "${BLUE}╔════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║${NC}  ${CYAN}DevSweep - Cleanup Preview${NC}                       ${BLUE}║${NC}"
+    echo -e "${BLUE}╠════════════════════════════════════════════════════╣${NC}"
+    
+    # Display each module's items
+    local module
+    for module in "${!module_items[@]}"; do
+        local module_size
+        module_size=$(format_kb_to_human "${module_total_kb[$module]}")
+        
+        echo -e "${BLUE}║${NC}  ${GREEN}${module}:${NC}                                          ${BLUE}║${NC}"
+        
+        # Display each item in module
+        while IFS= read -r line; do
+            if [[ -n "$line" ]]; then
+                # Pad line to fit in box (adjust spacing)
+                local padded_line
+                padded_line=$(printf "    • %-40s" "$line")
+                echo -e "${BLUE}║${NC}  ${padded_line:0:48} ${BLUE}║${NC}"
+            fi
+        done <<< "${module_items[$module]}"
+        
+        echo -e "${BLUE}║${NC}                                                    ${BLUE}║${NC}"
+    done
+    
+    # Display total
+    local total_human
+    total_human=$(format_kb_to_human "$total_space_kb")
+    echo -e "${BLUE}╠════════════════════════════════════════════════════╣${NC}"
+    echo -e "${BLUE}║${NC}  ${YELLOW}Total estimated space to free: ${total_human}${NC}           ${BLUE}║${NC}"
+    echo -e "${BLUE}╚════════════════════════════════════════════════════╝${NC}"
     echo ""
 }
