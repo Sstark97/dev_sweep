@@ -8,11 +8,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Path to devsweep binary
-readonly DEVSWEEP_BIN="$PROJECT_ROOT/bin/devsweep"
-
-# Test fixtures path (different from cleanup_test.sh to avoid conflicts)
-readonly MENU_TEST_FIXTURES_PATH="${HOME}/.devsweep_test_fixtures_menu"
+DEVSWEEP_BIN="$PROJECT_ROOT/bin/devsweep"
+MENU_TEST_FIXTURES_PATH="${HOME}/.devsweep_test_fixtures_menu"
 
 # ============================================================
 # SETUP & TEARDOWN

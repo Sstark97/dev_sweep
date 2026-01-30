@@ -15,7 +15,7 @@ source "$PROJECT_ROOT/src/modules/jetbrains.sh"
 source "$PROJECT_ROOT/src/modules/devtools.sh"
 
 # Test fixtures path
-readonly TEST_FIXTURES_PATH="${HOME}/.devsweep_test_fixtures"
+TEST_FIXTURES_PATH="${HOME}/.devsweep_test_fixtures"
 
 # ============================================================
 # SETUP & TEARDOWN
