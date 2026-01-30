@@ -39,10 +39,10 @@ function teardown_test_fixtures() {
 
 function create_test_file() {
     local path="$1"
-    local size_mb="${2:-1}"  # Default 1MB
-    
+    local size_kb="${2:-10}"  # Default 10KB (optimized for faster tests)
+
     mkdir -p "$(dirname "$path")"
-    dd if=/dev/zero of="$path" bs=1048576 count="$size_mb" 2>/dev/null
+    dd if=/dev/zero of="$path" bs=1024 count="$size_kb" 2>/dev/null
 }
 
 function file_exists() {
@@ -68,7 +68,7 @@ function test_jetbrains_clears_cache() {
     # Setup: Create test cache directory
     local test_cache="$TEST_FIXTURES_PATH/JetBrains"
     mkdir -p "$test_cache/test_ide_cache"
-    create_test_file "$test_cache/test_ide_cache/index.dat" 5
+    create_test_file "$test_cache/test_ide_cache/index.dat" 50
     
     # Override JetBrains cache path for test
     JB_CACHE_PATH="$test_cache"
@@ -87,7 +87,7 @@ function test_jetbrains_dry_run_preserves_cache() {
     # Setup: Create test cache
     local test_cache="$TEST_FIXTURES_PATH/JetBrains_dry"
     mkdir -p "$test_cache/test_ide"
-    create_test_file "$test_cache/test_ide/data.bin" 3
+    create_test_file "$test_cache/test_ide/data.bin" 30
     
     # Override path
     JB_CACHE_PATH="$test_cache"
@@ -110,7 +110,7 @@ function test_maven_cleanup_removes_repository() {
     # Setup: Create test Maven repo
     local test_maven="$TEST_FIXTURES_PATH/.m2/repository"
     mkdir -p "$test_maven/com/example/lib"
-    create_test_file "$test_maven/com/example/lib/artifact.jar" 10
+    create_test_file "$test_maven/com/example/lib/artifact.jar" 100
     
     # Execute: Clear Maven cache
     DRY_RUN=false
@@ -130,7 +130,7 @@ function test_npm_cache_cleanup() {
     # Setup: Create test npm cache
     local test_npm="$TEST_FIXTURES_PATH/.npm/_cacache"
     mkdir -p "$test_npm/content-v2"
-    create_test_file "$test_npm/content-v2/package-123.tgz" 8
+    create_test_file "$test_npm/content-v2/package-123.tgz" 80
     
     # Execute: Clear npm cache
     DRY_RUN=false
@@ -150,7 +150,7 @@ function test_pip_cache_cleanup() {
     # Setup: Create test pip cache
     local test_pip="$TEST_FIXTURES_PATH/pip_cache"
     mkdir -p "$test_pip/wheels"
-    create_test_file "$test_pip/wheels/package.whl" 5
+    create_test_file "$test_pip/wheels/package.whl" 50
     
     # Execute: Clear pip cache
     DRY_RUN=false
@@ -170,8 +170,8 @@ function test_space_tracking_accumulates() {
     # Setup: Create multiple test files
     local test_dir="$TEST_FIXTURES_PATH/tracking_test"
     mkdir -p "$test_dir"
-    create_test_file "$test_dir/file1.bin" 10  # 10MB
-    create_test_file "$test_dir/file2.bin" 20  # 20MB
+    create_test_file "$test_dir/file1.bin" 100  # 100KB
+    create_test_file "$test_dir/file2.bin" 200  # 200KB
     
     # Reset space counter
     TOTAL_SPACE_FREED_KB=0
@@ -181,9 +181,9 @@ function test_space_tracking_accumulates() {
     safe_rm "$test_dir/file1.bin" "Test file 1"
     safe_rm "$test_dir/file2.bin" "Test file 2"
     
-    # Assert: Should have tracked approximately 30MB (30720 KB)
+    # Assert: Should have tracked approximately 300KB
     # Allow 10% margin for filesystem overhead
-    local expected_kb=30720
+    local expected_kb=300
     local min_kb=$((expected_kb * 90 / 100))
     local max_kb=$((expected_kb * 110 / 100))
     
@@ -194,7 +194,7 @@ function test_space_tracking_accumulates() {
 function test_space_tracking_dry_run_no_accumulation() {
     # Setup: Create test file
     local test_file="$TEST_FIXTURES_PATH/dry_run_tracking.bin"
-    create_test_file "$test_file" 15
+    create_test_file "$test_file" 150
     
     # Reset space counter
     TOTAL_SPACE_FREED_KB=0
@@ -217,15 +217,15 @@ function test_complete_cleanup_workflow() {
     
     # JetBrains cache
     mkdir -p "$test_root/JetBrains/IntelliJIdea2023.1/caches"
-    create_test_file "$test_root/JetBrains/IntelliJIdea2023.1/caches/index.dat" 50
+    create_test_file "$test_root/JetBrains/IntelliJIdea2023.1/caches/index.dat" 500
     
     # Maven repo
     mkdir -p "$test_root/.m2/repository/org/example"
-    create_test_file "$test_root/.m2/repository/org/example/lib.jar" 30
+    create_test_file "$test_root/.m2/repository/org/example/lib.jar" 300
     
     # npm cache
     mkdir -p "$test_root/.npm/_cacache"
-    create_test_file "$test_root/.npm/_cacache/pkg.tgz" 20
+    create_test_file "$test_root/.npm/_cacache/pkg.tgz" 200
     
     # Reset counter
     TOTAL_SPACE_FREED_KB=0
@@ -247,8 +247,8 @@ function test_complete_cleanup_workflow() {
         assert_fail "npm directory was not deleted"
     fi
     
-    # Assert: Space should be tracked (approximately 100MB = 102400 KB)
-    local expected_kb=102400
+    # Assert: Space should be tracked (approximately 1000KB)
+    local expected_kb=1000
     local min_kb=$((expected_kb * 80 / 100))  # 20% margin for overhead
     
     assert_greater_than "$min_kb" "$TOTAL_SPACE_FREED_KB"

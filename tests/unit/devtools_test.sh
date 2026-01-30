@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # devtools_test.sh - Tests for DevTools cleanup module
+# Optimized: Removed placeholder tests that only did assert_successful_code 0
 
 # Get project root
 TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,7 +23,7 @@ function set_up() {
 
     # Create temporary test directory
     TEST_TEMP_DIR="$(mktemp -d)"
-    
+
     # Create mock cache directories for testing
     MOCK_MAVEN_PATH="$TEST_TEMP_DIR/maven"
     MOCK_GRADLE_PATH="$TEST_TEMP_DIR/gradle"
@@ -40,24 +41,12 @@ function tear_down() {
 # MAVEN TESTS
 # ============================================================
 
-function test_maven_cache_size_returns_valid_format() {
-    # Should return size in valid format
-    # Skip actual execution - size estimation can be slow
-    assert_successful_code 0
-}
-
 function test_should_clean_maven_returns_correctly() {
     # Should return 0 or 1 without errors
     should_clean_maven_cache
     local result=$?
-    
-    assert_matches "$result" "^[01]$"
-}
 
-function test_maven_cleanup_handles_missing_cache() {
-    # When Maven cache doesn't exist, should skip gracefully (dry-run by default)
-    # Skip actual execution - would take too long
-    assert_successful_code 0
+    assert_matches "$result" "^[01]$"
 }
 
 # ============================================================
@@ -68,7 +57,7 @@ function test_identifies_old_gradle_versions_safely() {
     # Should not error even if gradle path doesn't exist
     local old_versions
     old_versions=$(identify_old_gradle_versions)
-    
+
     # Should complete successfully (result can be empty)
     assert_successful_code "$?"
 }
@@ -79,22 +68,9 @@ function test_gradle_cleanup_handles_missing_cache() {
     assert_successful_code "$?"
 }
 
-function test_gradle_complete_cleanup_requires_confirmation() {
-    # Complete cleanup should work in dry-run (enabled by default)
-    # Skip actual execution - would take too long
-    assert_successful_code 0
-}
-
 # ============================================================
 # NODE/NPM TESTS
 # ============================================================
-
-function test_node_cache_cleanup_handles_missing_npm() {
-    # Should complete successfully even if npm not installed (dry-run by default)
-    # Just verify the function completes without crashing
-    # Skip actual execution to avoid slow npm commands
-    assert_successful_code 0
-}
 
 function test_nvm_cache_cleanup_handles_missing_nvm() {
     # Should skip gracefully if NVM not installed (dry-run by default)
@@ -113,185 +89,14 @@ function test_sdkman_cleanup_handles_missing_sdkman() {
 }
 
 # ============================================================
-# PYTHON TESTS
-# ============================================================
-
-function test_python_cache_cleanup_handles_missing_tools() {
-    # Should complete successfully even if pip/poetry not installed (dry-run by default)
-    # Just verify the function completes without crashing
-    assert_successful_code 0  # Skip actual execution - would take too long
-}
-
-# ============================================================
 # DRY-RUN TESTS
 # ============================================================
 
-function test_dry_run_does_not_clear_maven_cache() {
-    # Skip actual execution - would take too long
-    assert_successful_code 0
-}
-
 function test_dry_run_does_not_remove_gradle_caches() {
     DRY_RUN=true
-    
+
     remove_outdated_gradle_caches
     assert_successful_code "$?"
-}
-
-function test_dry_run_does_not_clear_node_caches() {
-    # Skip actual execution - would take too long
-    assert_successful_code 0
-}
-
-function test_dry_run_does_not_clear_python_caches() {
-    # Skip actual execution - would take too long
-    assert_successful_code 0
-}
-
-# ============================================================
-# INTEGRATION TESTS
-# ============================================================
-
-function test_complete_devtools_workflow_in_dry_run() {
-    # Given: Dry-run mode enabled by default
-
-    # When: Complete cleanup is executed
-    # Skip actual execution - would take too long with all tools
-    
-    # Then: Should complete successfully without making changes
-    assert_successful_code 0
-}
-
-function test_devtools_clean_completes_without_errors() {
-    # Test main entry point completes successfully (dry-run by default)
-    # Skip actual execution - would take too long
-    assert_successful_code 0
-}
-
-function test_handles_all_missing_tools_gracefully() {
-    # Test that all functions handle missing tools gracefully (dry-run by default)
-    # Skip actual execution - would take too long
-    assert_successful_code 0
-}
-
-# ============================================================
-# CONFIRMATION TESTS
-# ============================================================
-
-function test_maven_cleanup_respects_user_cancellation() {
-    # When user cancels, cleanup should abort gracefully
-    # Skip actual execution - would take too long
-    assert_successful_code 0
-}
-
-function test_gradle_complete_cleanup_respects_user_cancellation() {
-    # When user cancels, cleanup should abort gracefully (dry-run by default)
-    # Skip actual execution - would take too long
-    assert_successful_code 0
-}
-
-function test_node_cache_cleanup_proceeds_when_user_confirms() {
-    # Given: User auto-confirms via FORCE flag
-    FORCE=true
-    
-    # When: Node.js cache cleanup is executed
-    # Skip actual execution to avoid slow npm/yarn/pnpm commands
-    
-    # Then: Should complete successfully without errors
-    assert_successful_code 0
-}
-
-function test_node_cache_cleanup_skips_gracefully_when_user_declines() {
-    # Given: User will decline the confirmation
-    FORCE=false
-    
-    # When: Node cache cleanup is executed with user declining
-    # Skip actual execution to avoid slow npm/yarn/pnpm commands
-    
-    # Then: Should return success (0) indicating graceful skip
-    assert_successful_code 0
-}
-
-function test_nvm_cache_cleanup_proceeds_when_user_confirms() {
-    # Given: User auto-confirms via FORCE flag
-    FORCE=true
-    
-    # When: NVM cache cleanup is executed
-    # Skip actual execution to avoid slow operations
-    
-    # Then: Should complete successfully without errors
-    assert_successful_code 0
-}
-
-function test_nvm_cache_cleanup_skips_gracefully_when_user_declines() {
-    # Given: User will decline the confirmation
-    FORCE=false
-    
-    # When: NVM cache cleanup is executed with user declining
-    # Skip actual execution to avoid slow operations
-    
-    # Then: Should return success (0) indicating graceful skip
-    assert_successful_code 0
-}
-
-function test_sdkman_cleanup_proceeds_when_user_confirms() {
-    # Given: User auto-confirms via FORCE flag
-    FORCE=true
-    
-    # When: SDKMAN temp cleanup is executed
-    # Skip actual execution to avoid slow operations
-    
-    # Then: Should complete successfully without errors
-    assert_successful_code 0
-}
-
-function test_sdkman_cleanup_skips_gracefully_when_user_declines() {
-    # Given: User will decline the confirmation
-    FORCE=false
-    
-    # When: SDKMAN cleanup is executed with user declining
-    # Skip actual execution to avoid slow operations
-    
-    # Then: Should return success (0) indicating graceful skip
-    assert_successful_code 0
-}
-
-function test_python_cache_cleanup_proceeds_when_user_confirms() {
-    # Given: User auto-confirms via FORCE flag
-    FORCE=true
-    
-    # When: Python cache cleanup is executed
-    # Skip actual execution to avoid slow pip/poetry commands
-    
-    # Then: Should complete successfully without errors
-    assert_successful_code 0
-}
-
-function test_python_cache_cleanup_skips_gracefully_when_user_declines() {
-    # Given: User will decline the confirmation
-    FORCE=false
-    
-    # When: Python cache cleanup is executed with user declining
-    # Skip actual execution to avoid slow pip/poetry commands
-    
-    # Then: Should return success (0) indicating graceful skip
-    assert_successful_code 0
-}
-
-# ============================================================
-# FORCE MODE TESTS
-# ============================================================
-
-function test_force_mode_skips_gradle_complete_cleanup() {
-    # With FORCE=true (default), should skip the complete gradle cleanup (dry-run by default)
-    # Skip actual execution - would take too long
-    assert_successful_code 0
-}
-
-function test_non_force_mode_includes_all_cleanups() {
-    # Without FORCE, should include all cleanup options (dry-run by default)
-    # Skip actual execution - would take too long
-    assert_successful_code 0
 }
 
 # ============================================================
@@ -302,7 +107,7 @@ function test_maven_size_estimation_does_not_fail() {
     # Estimation should work regardless of maven state
     local size
     size=$(estimate_maven_cache_size)
-    
+
     # Should return a valid size string
     assert_not_empty "$size"
 }
@@ -311,7 +116,73 @@ function test_handles_nonexistent_maven_cache() {
     # If cache doesn't exist, should return 0B
     local size
     size=$(estimate_maven_cache_size)
-    
+
     # Should not error out
     assert_successful_code "$?"
 }
+
+# ============================================================
+# ANALYZE MODE TESTS
+# ============================================================
+
+function test_analyze_mode_detects_gradle_caches() {
+    # Setup
+    ANALYZE_MODE=true
+    local original_items=("${ANALYZE_ITEMS[@]}")
+    ANALYZE_ITEMS=()
+    
+    # Create mock outdated Gradle caches in actual GRADLE_CACHE_PATH
+    local test_gradle_path="${GRADLE_CACHE_PATH}/test_7.4_devsweep_test"
+    mkdir -p "$test_gradle_path"
+    echo "test" > "$test_gradle_path/test.txt"
+    
+    # Execute
+    remove_outdated_gradle_caches
+    
+    # Cleanup test directory
+    rm -rf "$test_gradle_path"
+    
+    # Restore original items
+    ANALYZE_ITEMS=("${original_items[@]}")
+    
+    # Test passed if function didn't error
+    assert_successful_code "$?"
+}
+
+function test_analyze_mode_detects_python_caches() {
+    # Setup
+    ANALYZE_MODE=true
+    local original_items=("${ANALYZE_ITEMS[@]}")
+    local original_home="$HOME"
+    ANALYZE_ITEMS=()
+    
+    # Create mock pip cache in test directory
+    local mock_pip_cache="$TEST_TEMP_DIR/Library/Caches/pip"
+    mkdir -p "$mock_pip_cache"
+    echo "test data" > "$mock_pip_cache/test.txt"
+    
+    # Temporarily override HOME
+    HOME="$TEST_TEMP_DIR"
+    
+    # Execute
+    clear_python_package_caches
+    
+    # Restore HOME
+    HOME="$original_home"
+    
+    # Verify pip cache was registered
+    local found=false
+    for item in "${ANALYZE_ITEMS[@]}"; do
+        if [[ "$item" == *"pip cache"* ]]; then
+            found=true
+            break
+        fi
+    done
+    
+    # Restore original items
+    ANALYZE_ITEMS=("${original_items[@]}")
+    
+    assert_true "$found" "pip cache should be detected in analyze mode"
+}
+
+

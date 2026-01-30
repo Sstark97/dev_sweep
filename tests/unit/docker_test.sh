@@ -174,3 +174,39 @@ function test_estimation_does_not_error_without_docker() {
     # Should return a number (0 if no docker)
     assert_matches "$estimate" "^[0-9]+$"
 }
+
+# ============================================================
+# ANALYZE MODE TESTS
+# ============================================================
+
+function test_analyze_mode_detects_orbstack_cache() {
+    # Setup
+    ANALYZE_MODE=true
+    ANALYZE_ITEMS=()
+    
+    # Create mock OrbStack cache
+    local mock_orbstack_cache="$TEST_TEMP_DIR/.orbstack/cache"
+    mkdir -p "$mock_orbstack_cache"
+    echo "test data" > "$mock_orbstack_cache/test.txt"
+    
+    # Mock HOME to point to test directory
+    HOME="$TEST_TEMP_DIR"
+    
+    # Mock is_orbstack_installed to return true
+    function is_orbstack_installed() { return 0; }
+    
+    # Execute
+    docker_clean
+    
+    # Verify OrbStack cache was registered
+    local found=false
+    for item in "${ANALYZE_ITEMS[@]}"; do
+        if [[ "$item" == *"OrbStack cache"* ]]; then
+            found=true
+            break
+        fi
+    done
+    
+    assert_true "$found" "OrbStack cache should be detected in analyze mode"
+}
+

@@ -83,28 +83,40 @@ function identify_old_gradle_versions() {
 # Remueve cachés de versiones antiguas de Gradle
 # Returns: 0 on success
 function remove_outdated_gradle_caches() {
-    log_info "Removing outdated Gradle caches..."
+    log_cleanup_info "Removing outdated Gradle caches..."
 
     if [[ ! -d "$GRADLE_CACHE_PATH" ]]; then
-        log_info "Gradle cache not found"
+        log_cleanup_info "Gradle cache not found"
         return 0
     fi
 
-    local old_caches
-    old_caches=$(identify_old_gradle_versions)
+    local outdated_gradle_versions
+    outdated_gradle_versions=$(identify_old_gradle_versions)
 
-    if [[ -z "$old_caches" ]]; then
-        log_info "No outdated Gradle caches to remove"
+    if [[ -z "$outdated_gradle_versions" ]]; then
+        log_cleanup_info "No outdated Gradle caches to remove"
         return 0
     fi
 
+    # Register for analysis if in analyze mode
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        while IFS= read -r gradle_cache_path; do
+            if [[ -n "$gradle_cache_path" ]] && [[ -d "$gradle_cache_path" ]]; then
+                local cache_version=$(basename "$gradle_cache_path")
+                register_if_analyzing "Dev Tools" "Gradle $cache_version" "$gradle_cache_path"
+            fi
+        done <<< "$outdated_gradle_versions"
+        return 0
+    fi
+
+    # Normal cleanup mode
     local count=0
-    while IFS= read -r old_cache; do
-        if [[ -n "$old_cache" ]] && [[ -d "$old_cache" ]]; then
-            safe_rm "$old_cache" "Old Gradle cache: $(basename "$old_cache")"
+    while IFS= read -r gradle_cache_path; do
+        if [[ -n "$gradle_cache_path" ]] && [[ -d "$gradle_cache_path" ]]; then
+            safe_rm "$gradle_cache_path" "Old Gradle cache: $(basename "$gradle_cache_path")"
             ((count++))
         fi
-    done <<< "$old_caches"
+    done <<< "$outdated_gradle_versions"
 
     if [[ $count -gt 0 ]]; then
         log_success "Removed $count outdated Gradle cache(s)"
@@ -432,11 +444,13 @@ function clear_sdkman_temp_files() {
 # Limpia cachés de pip y poetry
 # Returns: 0 on success
 function clear_python_package_caches() {
-    log_info "Clearing Python package caches..."
+    log_cleanup_info "Clearing Python package caches..."
 
     local cleaned=false
     local cache_summary=""
     local has_cache=false
+    local detected_pip_cache=""
+    local detected_poetry_cache=""
 
     # Check if pip cache exists
     local pip_cache_dirs=(
@@ -445,6 +459,7 @@ function clear_python_package_caches() {
     )
     for pip_cache_dir in "${pip_cache_dirs[@]}"; do
         if [[ -d "$pip_cache_dir" ]]; then
+            detected_pip_cache="$pip_cache_dir"
             local pip_size=$(get_size "$pip_cache_dir")
             cache_summary="pip: $pip_size"
             has_cache=true
@@ -459,6 +474,7 @@ function clear_python_package_caches() {
     )
     for poetry_cache_dir in "${poetry_cache_dirs[@]}"; do
         if [[ -d "$poetry_cache_dir" ]]; then
+            detected_poetry_cache="$poetry_cache_dir"
             if [[ -n "$cache_summary" ]]; then
                 cache_summary="$cache_summary, poetry"
             else
@@ -471,7 +487,18 @@ function clear_python_package_caches() {
 
     # If no package managers found, exit early
     if [[ "$has_cache" == false ]]; then
-        log_info "No Python package managers found"
+        log_cleanup_info "No Python package managers found"
+        return 0
+    fi
+
+    # Register for analysis if in analyze mode
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        if [[ -n "$detected_pip_cache" ]]; then
+            register_if_analyzing "Dev Tools" "pip cache" "$detected_pip_cache"
+        fi
+        if [[ -n "$detected_poetry_cache" ]]; then
+            register_if_analyzing "Dev Tools" "poetry cache" "$detected_poetry_cache"
+        fi
         return 0
     fi
 
