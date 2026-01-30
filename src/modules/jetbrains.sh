@@ -73,6 +73,7 @@ find_outdated_ide_versions() {
 
 # Removes outdated IDE versions to free disk space
 # Preserves the latest version to ensure the developer can continue working
+# In ANALYZE_MODE: Collects info without deleting
 # Usage: remove_old_ide_versions <ide_name>
 # Returns: 0 on success, 1 on error
 remove_old_ide_versions() {
@@ -98,7 +99,9 @@ remove_old_ide_versions() {
         return 0
     elif ((version_count == MINIMUM_IDE_VERSIONS_TO_KEEP)); then
         log_debug "  Only one version exists for $ide_name: $(basename "${all_versions[0]}")"
-        log_info "  ${GREEN}✓${NC} Keeping: $(basename "${all_versions[0]}")"
+        if [[ "$ANALYZE_MODE" != true ]]; then
+            log_info "  ${GREEN}✓${NC} Keeping: $(basename "${all_versions[0]}")"
+        fi
         return 0
     fi
 
@@ -113,23 +116,40 @@ remove_old_ide_versions() {
         outdated_versions_to_remove+=("${all_versions[$i]}")
     done
 
-    log_info "  ${GREEN}✓${NC} Keeping latest: $(basename "$latest_version")"
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        log_info "  ${GREEN}✓${NC} Keeping latest: $(basename "$latest_version")"
+    fi
 
-    # Remove outdated versions to free disk space
-    for outdated_version in "${outdated_versions_to_remove[@]}"; do
-        local version_display_name
-        version_display_name="$(basename "$outdated_version")"
-        safe_rm "$outdated_version" "$ide_name: $version_display_name"
-    done
+    # In analyze mode, collect info; otherwise, remove outdated versions
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        # Collect items for analysis
+        for outdated_version in "${outdated_versions_to_remove[@]}"; do
+            local version_display_name
+            version_display_name="$(basename "$outdated_version")"
+            local version_size
+            version_size=$(get_size "$outdated_version")
+            add_analyze_item "JetBrains" "$version_display_name" "$version_size"
+        done
+    else
+        # Remove outdated versions to free disk space
+        for outdated_version in "${outdated_versions_to_remove[@]}"; do
+            local version_display_name
+            version_display_name="$(basename "$outdated_version")"
+            safe_rm "$outdated_version" "$ide_name: $version_display_name"
+        done
+    fi
 
     return 0
 }
 
 # Clears corrupted or outdated IDE index caches to improve performance
 # These caches will be automatically rebuilt when the IDE starts next time
+# In ANALYZE_MODE: Collects cache size without deleting
 # Usage: clear_ide_index_caches
 clear_ide_index_caches() {
-    log_section "Clearing IDE Index Caches"
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        log_section "Clearing IDE Index Caches"
+    fi
 
     if [[ ! -d "$JB_CACHE_PATH" ]]; then
         log_debug "JetBrains cache directory does not exist"
@@ -137,14 +157,22 @@ clear_ide_index_caches() {
     fi
 
     if ! is_dir_not_empty "$JB_CACHE_PATH"; then
-        log_info "JetBrains cache is already empty"
+        if [[ "$ANALYZE_MODE" != true ]]; then
+            log_info "JetBrains cache is already empty"
+        fi
         return 0
     fi
 
-    log_info "Clearing index caches (will be rebuilt on next IDE launch)..."
-
-    # Delete all cache contents using safe_rm to track space
-    safe_rm "$JB_CACHE_PATH" "Index caches cleared"
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        # Collect cache info for analysis
+        local cache_size
+        cache_size=$(get_size "$JB_CACHE_PATH")
+        add_analyze_item "JetBrains" "Index caches" "$cache_size"
+    else
+        log_info "Clearing index caches (will be rebuilt on next IDE launch)..."
+        # Delete all cache contents using safe_rm to track space
+        safe_rm "$JB_CACHE_PATH" "Index caches cleared"
+    fi
 
     return 0
 }
@@ -187,24 +215,34 @@ stop_running_ide_processes() {
 
 # Main entry point: Reclaims disk space from outdated JetBrains IDEs
 # Stops running processes, removes old versions, and clears corrupted caches
+# In ANALYZE_MODE: Only collects information without deleting
 # Usage: cleanup_jetbrains_installations
 # Returns: 0 on success, 1 on error
 cleanup_jetbrains_installations() {
-    log_section "JetBrains IDEs Cleanup"
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        log_section "JetBrains IDEs Cleanup"
+    fi
 
-    # Stop running IDE processes before cleanup
-    stop_running_ide_processes
+    # Skip process stopping in analyze mode
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        # Stop running IDE processes before cleanup
+        stop_running_ide_processes
+    fi
 
     # Check if any JetBrains IDEs are installed
     if [[ ! -d "$JB_PATH" ]]; then
-        log_warn "JetBrains directory not found: $JB_PATH"
-        log_info "No JetBrains IDEs detected on this system"
+        if [[ "$ANALYZE_MODE" != true ]]; then
+            log_warn "JetBrains directory not found: $JB_PATH"
+            log_info "No JetBrains IDEs detected on this system"
+        fi
         return 0
     fi
 
-    log_info "Analyzing JetBrains installations..."
-    log_info "Strategy: Keep latest version, remove older versions"
-    echo ""
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        log_info "Analyzing JetBrains installations..."
+        log_info "Strategy: Keep latest version, remove older versions"
+        echo ""
+    fi
 
     # Process each IDE product
     local found_items_to_clean=false
@@ -214,16 +252,20 @@ cleanup_jetbrains_installations() {
         fi
     done
 
-    if [[ "$found_items_to_clean" == false ]]; then
+    if [[ "$found_items_to_clean" == false ]] && [[ "$ANALYZE_MODE" != true ]]; then
         log_info "No outdated IDE versions found"
     fi
 
-    echo ""
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        echo ""
+    fi
 
     # Clear index caches to improve performance
     clear_ide_index_caches
 
-    log_success "JetBrains cleanup completed"
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        log_success "JetBrains cleanup completed"
+    fi
     return 0
 }
 
