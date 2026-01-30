@@ -78,6 +78,7 @@ show_help() {
     echo "    -h, --help          Show this help message"
     echo "    -v, --version       Show version information"
     echo "    -d, --dry-run       Preview actions without deleting files"
+    echo "    -a, --analyze       Analyze and show cleanup preview with estimated space"
     echo "    --verbose           Show detailed output"
     echo "    -f, --force, -y, --yes    Skip all confirmations (dangerous!)"
     echo ""
@@ -95,6 +96,9 @@ show_help() {
     echo ""
     echo "    # Preview all cleanup operations"
     echo "    devsweep --dry-run --all"
+    echo ""
+    echo "    # Analyze what would be cleaned (with size estimates)"
+    echo "    devsweep --analyze --all"
     echo ""
     echo "    # Clean only JetBrains IDEs"
     echo "    devsweep --jetbrains"
@@ -156,6 +160,11 @@ parse_arguments() {
                 log_info "Dry-run mode enabled - no files will be deleted"
                 shift
                 ;;
+            -a|--analyze)
+                ANALYZE_MODE=true
+                log_info "Analyze mode enabled - showing cleanup preview"
+                shift
+                ;;
             --verbose)
                 VERBOSE=true
                 log_debug "Verbose mode enabled"
@@ -166,7 +175,7 @@ parse_arguments() {
                 log_warn "Force mode enabled - confirmations will be skipped!"
                 shift
                 ;;
-            -a|--all)
+            --all)
                 SELECTED_MODULES=("jetbrains" "docker" "homebrew" "devtools" "system")
                 shift
                 ;;
@@ -229,7 +238,9 @@ run_modules() {
         case "$module" in
             jetbrains)
                 if cleanup_jetbrains_installations; then
-                    log_success "Module completed: jetbrains"
+                    if [[ "$ANALYZE_MODE" != true ]]; then
+                        log_success "Module completed: jetbrains"
+                    fi
                 else
                     log_error "Module failed: jetbrains"
                     ((failed++))
@@ -237,7 +248,9 @@ run_modules() {
                 ;;
             docker)
                 if docker_clean; then
-                    log_success "Module completed: docker"
+                    if [[ "$ANALYZE_MODE" != true ]]; then
+                        log_success "Module completed: docker"
+                    fi
                 else
                     log_error "Module failed: docker"
                     ((failed++))
@@ -245,7 +258,9 @@ run_modules() {
                 ;;
             homebrew)
                 if homebrew_clean; then
-                    log_success "Module completed: homebrew"
+                    if [[ "$ANALYZE_MODE" != true ]]; then
+                        log_success "Module completed: homebrew"
+                    fi
                 else
                     log_error "Module failed: homebrew"
                     ((failed++))
@@ -253,7 +268,9 @@ run_modules() {
                 ;;
             devtools)
                 if devtools_clean; then
-                    log_success "Module completed: devtools"
+                    if [[ "$ANALYZE_MODE" != true ]]; then
+                        log_success "Module completed: devtools"
+                    fi
                 else
                     log_error "Module failed: devtools"
                     ((failed++))
@@ -348,6 +365,9 @@ main() {
         if [[ "$DRY_RUN" == true ]]; then
             log_warn "🔍 DRY-RUN MODE: No files will be deleted"
         fi
+        if [[ "$ANALYZE_MODE" == true ]]; then
+            log_info "📊 ANALYZE MODE: Collecting cleanup preview..."
+        fi
         if [[ "$FORCE" == true ]]; then
             log_warn "⚡ FORCE MODE: Confirmations will be skipped"
         fi
@@ -359,16 +379,38 @@ main() {
             exit_code=$?
         fi
 
-        # Show completion message
-        print_completion
-
-        if [[ "$DRY_RUN" == true ]]; then
-            log_success "Dry-run completed. No files were modified."
-            echo ""
-            log_info "To perform actual cleanup, run without --dry-run flag"
+        # Show analyze preview or completion message
+        if [[ "$ANALYZE_MODE" == true ]]; then
+            show_analyze_preview
+            # Ask for confirmation to proceed with cleanup
+            if confirm_action "Proceed with cleanup?"; then
+                log_info "Starting cleanup..."
+                echo ""
+                # Reset analyze mode and run cleanup
+                ANALYZE_MODE=false
+                ANALYZE_ITEMS=()
+                TOTAL_SPACE_FREED_KB=0
+                if ! run_modules; then
+                    exit_code=$?
+                fi
+                print_completion
+                log_info "Note: Spotlight may show 'Calculating...' for a few minutes"
+                log_info "This is normal as macOS recalculates disk space"
+            else
+                log_info "Cleanup cancelled"
+            fi
         else
-            log_info "Note: Spotlight may show 'Calculating...' for a few minutes"
-            log_info "This is normal as macOS recalculates disk space"
+            # Show completion message
+            print_completion
+            
+            if [[ "$DRY_RUN" == true ]]; then
+                log_success "Dry-run completed. No files were modified."
+                echo ""
+                log_info "To perform actual cleanup, run without --dry-run flag"
+            else
+                log_info "Note: Spotlight may show 'Calculating...' for a few minutes"
+                log_info "This is normal as macOS recalculates disk space"
+            fi
         fi
 
         exit $exit_code
