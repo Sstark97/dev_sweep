@@ -57,10 +57,10 @@ function estimate_homebrew_cache_size() {
 # Remueve versiones desactualizadas de paquetes instalados
 # Returns: 0 on success
 function remove_outdated_package_versions() {
-    log_info "Removing outdated Homebrew packages..."
+    log_cleanup_info "Removing outdated Homebrew packages..."
 
     if ! is_homebrew_installed; then
-        log_warn "Homebrew is not installed"
+        log_cleanup_info "Homebrew is not installed"
         return 0
     fi
 
@@ -69,7 +69,13 @@ function remove_outdated_package_versions() {
     outdated_count=$(brew list --versions 2>/dev/null | grep -c " " || echo "0")
 
     if [[ "$outdated_count" -eq 0 ]]; then
-        log_info "No outdated packages to remove"
+        log_cleanup_info "No outdated packages to remove"
+        return 0
+    fi
+
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        # Estimate size of outdated packages
+        add_analyze_item "Homebrew" "$outdated_count outdated packages" "~$((outdated_count * 50))MB"
         return 0
     fi
 
@@ -91,7 +97,7 @@ function remove_outdated_package_versions() {
 # Remueve paquetes huérfanos (dependencies no utilizadas)
 # Returns: 0 on success
 function remove_unused_dependencies() {
-    log_info "Checking for unused dependencies..."
+    log_cleanup_info "Checking for unused dependencies..."
 
     if ! is_homebrew_installed; then
         return 0
@@ -104,7 +110,12 @@ function remove_unused_dependencies() {
     unused_deps=$(echo "$unused_deps" | tr -d ' \n\r' || echo "0")
 
     if [[ "$unused_deps" -eq 0 ]] 2>/dev/null; then
-        log_info "No unused dependencies found"
+        log_cleanup_info "No unused dependencies found"
+        return 0
+    fi
+
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        add_analyze_item "Homebrew" "$unused_deps unused dependencies" "~$((unused_deps * 20))MB"
         return 0
     fi
 
@@ -130,7 +141,7 @@ function remove_unused_dependencies() {
 # Limpia la caché de descargas de Homebrew
 # Returns: 0 on success
 function clear_homebrew_download_cache() {
-    log_info "Clearing Homebrew download cache..."
+    log_cleanup_info "Clearing Homebrew download cache..."
 
     if ! is_homebrew_installed; then
         return 0
@@ -140,11 +151,18 @@ function clear_homebrew_download_cache() {
     cache_size=$(estimate_homebrew_cache_size)
 
     if [[ "$cache_size" == "0B" ]]; then
-        log_info "Homebrew cache is empty"
+        log_cleanup_info "Homebrew cache is empty"
         return 0
     fi
 
-    log_info "Current cache size: $cache_size"
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        log_info "Current cache size: $cache_size"
+    fi
+
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        add_analyze_item "Homebrew" "Download cache" "$cache_size"
+        return 0
+    fi
 
     if [[ "$DRY_RUN" == true ]]; then
         log_info "[DRY-RUN] Would clear Homebrew cache ($cache_size)"
@@ -210,37 +228,48 @@ function update_and_diagnose_homebrew() {
 # Usage: homebrew_clean
 # Returns: 0 on success
 function homebrew_clean() {
-    log_section "Homebrew Cleanup"
+    log_cleanup_section "Homebrew Cleanup"
 
     if ! is_homebrew_installed; then
-        log_warn "Homebrew is not installed"
-        log_info "Skipping Homebrew cleanup"
+        log_cleanup_info "Homebrew is not installed"
+        log_cleanup_info "Skipping Homebrew cleanup"
         return 0
     fi
 
-    # Show initial cache size
-    local initial_cache_size
-    initial_cache_size=$(estimate_homebrew_cache_size)
-    log_info "Initial cache size: $initial_cache_size"
-    echo ""
-
-    # Cleanup operations
-    remove_outdated_package_versions
-    echo ""
-
-    remove_unused_dependencies
-    echo ""
-
-    clear_homebrew_download_cache
-    echo ""
-
-    # Optional: Update and diagnose
-    if [[ "$VERBOSE" == true ]] && [[ "$DRY_RUN" != true ]]; then
-        update_and_diagnose_homebrew
+    # Show initial cache size (skip in analyze mode)
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        local initial_cache_size
+        initial_cache_size=$(estimate_homebrew_cache_size)
+        log_info "Initial cache size: $initial_cache_size"
         echo ""
     fi
 
-    log_success "Homebrew cleanup completed"
+    # Cleanup operations
+    remove_outdated_package_versions
+    
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        echo ""
+    fi
+
+    remove_unused_dependencies
+    
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        echo ""
+    fi
+
+    clear_homebrew_download_cache
+
+    # Skip update/diagnose in analyze mode
+    if [[ "$ANALYZE_MODE" != true ]]; then
+        echo ""
+        # Optional: Update and diagnose
+        if [[ "$VERBOSE" == true ]] && [[ "$DRY_RUN" != true ]]; then
+            update_and_diagnose_homebrew
+            echo ""
+        fi
+        log_success "Homebrew cleanup completed"
+    fi
+    
     return 0
 }
 
