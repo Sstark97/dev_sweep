@@ -200,6 +200,93 @@ function clear_docker_build_cache() {
 }
 
 # ============================================================
+# LIMPIEZA AGRESIVA
+# ============================================================
+
+# Remueve TODAS las imágenes no utilizadas (no solo dangling)
+# A diferencia de remove_dangling_docker_images, esto elimina cualquier imagen
+# que no esté siendo usada por un contenedor activo.
+# Returns: 0 on success
+function remove_all_unused_docker_images() {
+    log_cleanup_info "Checking for unused Docker images..."
+
+    if ! is_docker_available; then
+        return 0
+    fi
+
+    local total_images
+    total_images=$(docker images -q 2>/dev/null | wc -l | tr -d ' ')
+
+    if [[ "$total_images" -eq 0 ]]; then
+        log_cleanup_info "No images found"
+        return 0
+    fi
+
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        add_analyze_item "Docker" "All unused images (aggressive, $total_images total)" "~$((total_images * 200))MB"
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY-RUN] Would prune all unused images ($total_images total, only unused removed)"
+        return 0
+    fi
+
+    if ! confirm_dangerous "Remove ALL unused Docker images (not just dangling)"; then
+        log_info "Aggressive image cleanup skipped"
+        return 0
+    fi
+
+    docker image prune -af 2>/dev/null || {
+        log_warn "Some images could not be removed"
+        return 0
+    }
+
+    log_success "All unused Docker images removed"
+}
+
+# Remueve networks de Docker que no están en uso
+# Solo elimina networks custom (preserve bridge, host, none)
+# Returns: 0 on success
+function prune_unused_docker_networks() {
+    log_cleanup_info "Checking for unused Docker networks..."
+
+    if ! is_docker_available; then
+        return 0
+    fi
+
+    local network_count
+    network_count=$(docker network ls --format '{{.Name}}' 2>/dev/null | grep -v -E '^(bridge|host|none)$' | wc -l | tr -d ' ')
+
+    if [[ "$network_count" -eq 0 ]]; then
+        log_cleanup_info "No custom networks to prune"
+        return 0
+    fi
+
+    if [[ "$ANALYZE_MODE" == true ]]; then
+        add_analyze_item "Docker" "$network_count custom network(s)" "negligible"
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "[DRY-RUN] Would prune $network_count unused custom network(s)"
+        return 0
+    fi
+
+    if ! confirm_dangerous "Prune unused Docker networks ($network_count custom)"; then
+        log_info "Network pruning skipped"
+        return 0
+    fi
+
+    docker network prune -f 2>/dev/null || {
+        log_warn "Some networks could not be pruned"
+        return 0
+    }
+
+    log_success "Pruned unused Docker networks"
+}
+
+# ============================================================
 # LIMPIEZA PROFUNDA (DESTRUCTIVA)
 # ============================================================
 
@@ -294,25 +381,33 @@ function cleanup_docker_safely() {
 function docker_clean() {
     log_cleanup_section "Docker & OrbStack Cleanup"
 
-    # Option 1: Safe cleanup (always run, even in analyze mode)
+    # Safe cleanup (always run, even in analyze mode)
     cleanup_docker_safely
 
-    # Option 2: OrbStack - detect before early return
-    if is_orbstack_installed; then
-        local orbstack_cache="${HOME}/.orbstack/cache"
-        if [[ -d "$orbstack_cache" ]]; then
-            register_if_analyzing "Docker" "OrbStack cache" "$orbstack_cache" && return 0
-        fi
-    fi
-
-    # Skip destructive operations and confirmations in analyze mode
+    # Analyze mode: collect all items then return
     if [[ "$ANALYZE_MODE" == true ]]; then
+        if is_orbstack_installed; then
+            local orbstack_cache="${HOME}/.orbstack/cache"
+            if [[ -d "$orbstack_cache" ]]; then
+                register_if_analyzing "Docker" "OrbStack cache" "$orbstack_cache"
+            fi
+        fi
+        remove_all_unused_docker_images
+        prune_unused_docker_networks
         return 0
     fi
 
     echo ""
 
-    # Option 3: Deep cleanup (ask user)
+    # Aggressive cleanup (only offered interactively, not with --force)
+    if is_docker_available && [[ "$FORCE" != true ]]; then
+        remove_all_unused_docker_images
+        echo ""
+        prune_unused_docker_networks
+        echo ""
+    fi
+
+    # Deep cleanup: Docker Desktop reset
     if is_docker_available && [[ "$FORCE" != true ]]; then
         log_warn "Advanced: Complete Docker Desktop reset available"
         log_warn "This will delete ALL containers, images, and volumes"
@@ -323,7 +418,7 @@ function docker_clean() {
         fi
     fi
 
-    # Option 4: OrbStack cleanup
+    # OrbStack cleanup
     if is_orbstack_installed; then
         echo ""
         cleanup_orbstack_data
