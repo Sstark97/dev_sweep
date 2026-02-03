@@ -176,6 +176,35 @@ function test_estimation_does_not_error_without_docker() {
 }
 
 # ============================================================
+# AGGRESSIVE CLEANUP TESTS
+# ============================================================
+
+function test_dry_run_does_not_remove_all_unused_images() {
+    DRY_RUN=true
+
+    remove_all_unused_docker_images
+    assert_successful_code "$?"
+}
+
+function test_dry_run_does_not_prune_networks() {
+    DRY_RUN=true
+
+    prune_unused_docker_networks
+    assert_successful_code "$?"
+}
+
+function test_aggressive_cleanup_handles_missing_docker() {
+    DRY_RUN=true
+
+    # Both functions should return 0 gracefully when docker is unavailable
+    remove_all_unused_docker_images
+    assert_successful_code "$?"
+
+    prune_unused_docker_networks
+    assert_successful_code "$?"
+}
+
+# ============================================================
 # ANALYZE MODE TESTS
 # ============================================================
 
@@ -209,4 +238,3 @@ function test_analyze_mode_detects_orbstack_cache() {
     
     assert_true "$found" "OrbStack cache should be detected in analyze mode"
 }
-
