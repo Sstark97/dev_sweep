@@ -60,6 +60,8 @@ source "$PROJECT_ROOT/src/modules/docker.sh"
 source "$PROJECT_ROOT/src/modules/homebrew.sh"
 # shellcheck source=src/modules/devtools.sh
 source "$PROJECT_ROOT/src/modules/devtools.sh"
+# shellcheck source=src/modules/project_cleanup.sh
+source "$PROJECT_ROOT/src/modules/project_cleanup.sh"
 
 # Global array for selected modules
 declare -a SELECTED_MODULES=()
@@ -87,6 +89,7 @@ show_help() {
     echo "    --docker            Clean Docker/OrbStack (DESTRUCTIVE)"
     echo "    --homebrew          Clean Homebrew caches"
     echo "    --devtools          Clean dev tools (Maven, Gradle, Node, etc.)"
+    echo "    --projects          Clean stale node_modules from inactive projects"
     echo "    --system            Clean system logs and caches (requires sudo)"
     echo "    -a, --all           Run all cleanup modules"
     echo ""
@@ -113,11 +116,11 @@ show_help() {
     echo "    devsweep --force --all"
     echo ""
     echo -e "${CYAN}SAFETY FEATURES:${NC}"
-    echo "    • Dry-run mode to preview all actions"
-    echo "    • Interactive confirmations for dangerous operations"
-    echo "    • Double confirmation (\"type yes\") for destructive actions"
-    echo "    • Keeps latest JetBrains IDE versions automatically"
-    echo "    • Detailed logging of all operations"
+    echo "    \u2022 Dry-run mode to preview all actions"
+    echo "    \u2022 Interactive confirmations for dangerous operations"
+    echo "    \u2022 Double confirmation (\"type yes\") for destructive actions"
+    echo "    \u2022 Keeps latest JetBrains IDE versions automatically"
+    echo "    \u2022 Detailed logging of all operations"
     echo ""
     echo -e "${CYAN}MORE INFO:${NC}"
     echo "    GitHub: https://github.com/your-username/devsweep"
@@ -176,7 +179,7 @@ parse_arguments() {
                 shift
                 ;;
             --all)
-                SELECTED_MODULES=("jetbrains" "docker" "homebrew" "devtools" "system")
+                SELECTED_MODULES=("jetbrains" "docker" "homebrew" "devtools" "projects" "system")
                 shift
                 ;;
             --jetbrains)
@@ -193,6 +196,10 @@ parse_arguments() {
                 ;;
             --devtools)
                 SELECTED_MODULES+=("devtools")
+                shift
+                ;;
+            --projects)
+                SELECTED_MODULES+=("projects")
                 shift
                 ;;
             --system)
@@ -276,6 +283,16 @@ run_modules() {
                     ((failed++))
                 fi
                 ;;
+            projects)
+                if project_cleanup_clean; then
+                    if [[ "$ANALYZE_MODE" != true ]]; then
+                        log_success "Module completed: projects"
+                    fi
+                else
+                    log_error "Module failed: projects"
+                    ((failed++))
+                fi
+                ;;
             system)
                 log_warn "System module not yet implemented"
                 # TODO: Implement cleanup_system_caches in src/modules/system.sh
@@ -324,10 +341,10 @@ main() {
 
             # Show mode indicators
             if [[ "$DRY_RUN" == true ]]; then
-                log_warn "🔍 DRY-RUN MODE: No files will be deleted"
+                log_warn "\U0001f50d DRY-RUN MODE: No files will be deleted"
             fi
             if [[ "$FORCE" == true ]]; then
-                log_warn "⚡ FORCE MODE: Confirmations will be skipped"
+                log_warn "\u26a1 FORCE MODE: Confirmations will be skipped"
             fi
             echo ""
 
@@ -363,13 +380,13 @@ main() {
 
         # Show mode indicators
         if [[ "$DRY_RUN" == true ]]; then
-            log_warn "🔍 DRY-RUN MODE: No files will be deleted"
+            log_warn "\U0001f50d DRY-RUN MODE: No files will be deleted"
         fi
         if [[ "$ANALYZE_MODE" == true ]]; then
-            log_info "📊 ANALYZE MODE: Collecting cleanup preview..."
+            log_info "\U0001f4ca ANALYZE MODE: Collecting cleanup preview..."
         fi
         if [[ "$FORCE" == true ]]; then
-            log_warn "⚡ FORCE MODE: Confirmations will be skipped"
+            log_warn "\u26a1 FORCE MODE: Confirmations will be skipped"
         fi
         echo ""
 

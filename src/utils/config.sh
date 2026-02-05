@@ -52,6 +52,10 @@ readonly NPM_CACHE_PATH="${HOME}/.npm/_cacache"
 readonly NVM_CACHE_PATH="${HOME}/.nvm/.cache"
 readonly SDKMAN_TMP_PATH="${HOME}/.sdkman/tmp"
 
+# Stale node_modules scanning (search rooted at HOME)
+readonly NODE_MODULES_STALE_DAYS=90
+readonly NODE_MODULES_MAX_DEPTH=6
+
 readonly CHROME_AI_MODEL_PATH="${HOME}/Library/Application Support/Google/Chrome/OptGuideOnDeviceModel"
 
 readonly SYSTEM_LOG_PATH="/private/var/log"
