@@ -58,6 +58,14 @@ log_debug() {
     fi
 }
 
+# Log section header (highlighted)
+log_section() {
+    local message="$1"
+    echo ""
+    echo -e "${CYAN}━━━ ${message} ━━━${NC}"
+    echo ""
+}
+
 # Nuclear mode confirmation - NEVER auto-confirms, even with --force
 # Usage: confirm_nuclear <action_description>
 # Returns: 0 if user types "yes", 1 otherwise
