@@ -1,16 +1,20 @@
 name: .NET CI
 
+# Temporarily disabled until .NET project is initialized (Issue #25)
+# Will be enabled automatically once net/ directory contains .NET project files
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'net/**'
-      - '.github/workflows/net-ci.yml'
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'net/**'
-      - '.github/workflows/net-ci.yml'
+  workflow_dispatch:  # Manual trigger only for now
+  # Uncomment when .NET project is ready:
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'net/**'
+  #     - '.github/workflows/net-ci.yml'
+  # pull_request:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'net/**'
+  #     - '.github/workflows/net-ci.yml'
 
 defaults:
   run:
