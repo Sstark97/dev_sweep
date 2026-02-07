@@ -86,3 +86,44 @@ function clear_gradle_cache_completely() {
     safe_rm "$GRADLE_CACHE_PATH" "Gradle cache"
     log_success "Gradle cache cleared ($cache_size freed)"
 }
+
+# Nuclear cleanup for Gradle - removes caches AND wrapper
+# Returns: 0 on success
+function nuclear_gradle_clean() {
+    local has_targets=false
+    
+    if [[ -d "$GRADLE_CACHE_PATH" ]] || [[ -d "$GRADLE_WRAPPER_PATH" ]]; then
+        has_targets=true
+    fi
+    
+    if [[ "$has_targets" == false ]]; then
+        return 0
+    fi
+    
+    # Skip confirmation if already confirmed at orchestrator level
+    if [[ "${NUCLEAR_CONFIRMED:-false}" == "true" ]]; then
+        if [[ -d "$GRADLE_CACHE_PATH" ]]; then
+            safe_rm "$GRADLE_CACHE_PATH" "Gradle caches (nuclear)"
+        fi
+        if [[ -d "$GRADLE_WRAPPER_PATH" ]]; then
+            safe_rm "$GRADLE_WRAPPER_PATH" "Gradle wrapper (nuclear)"
+        fi
+        return 0
+    fi
+    
+    # Fallback: individual confirmation (shouldn't reach here in normal flow)
+    local gradle_cache_size=$(get_size "$GRADLE_CACHE_PATH" 2>/dev/null || echo "0B")
+    local gradle_wrapper_size=$(get_size "$GRADLE_WRAPPER_PATH" 2>/dev/null || echo "0B")
+    
+    if confirm_nuclear "Delete Gradle caches ($gradle_cache_size) and wrapper ($gradle_wrapper_size)"; then
+        if [[ -d "$GRADLE_CACHE_PATH" ]]; then
+            safe_rm "$GRADLE_CACHE_PATH" "Gradle caches (nuclear)"
+        fi
+        if [[ -d "$GRADLE_WRAPPER_PATH" ]]; then
+            safe_rm "$GRADLE_WRAPPER_PATH" "Gradle wrapper (nuclear)"
+        fi
+        return 0
+    fi
+    
+    return 1
+}

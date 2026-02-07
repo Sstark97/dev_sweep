@@ -23,84 +23,82 @@ source "$DEVTOOLS_DIR/package-managers/python.sh"
 source "$DEVTOOLS_DIR/package-managers/sdkman.sh"
 
 # ============================================================
-# NUCLEAR MODE
+# NUCLEAR MODE ORCHESTRATOR
 # ============================================================
 
-# Limpieza nuclear - elimina TODOS los cachés sin excepciones
+# Nuclear cleanup orchestrator - coordinates complete cache destruction across all modules
 # Returns: 0 on success, 1 if cancelled
 function nuclear_devtools_clean() {
     log_cleanup_section "NUCLEAR MODE - Development Tools"
     
-    # Collect paths and calculate sizes
-    local gradle_size=""
-    local npm_size=""
-    local cargo_size=""
-    local composer_size=""
-    local pip_size=""
-    local poetry_size=""
-    local maven_size=""
-    
+    # Collect sizes from all modules for summary
+    local summary_items=()
     local has_targets=false
     
-    # Check Gradle (caches + wrapper)
-    if [[ -d "$GRADLE_CACHE_PATH" ]] || [[ -d "$GRADLE_WRAPPER_PATH" ]]; then
+    # Maven
+    if [[ -d "$MAVEN_REPO_PATH" ]]; then
+        local maven_size=$(get_size "$MAVEN_REPO_PATH")
+        summary_items+=("Maven: $maven_size")
         has_targets=true
+    fi
+    
+    # Gradle (caches + wrapper)
+    if [[ -d "$GRADLE_CACHE_PATH" ]] || [[ -d "$GRADLE_WRAPPER_PATH" ]]; then
         local gradle_cache_size=$(get_size "$GRADLE_CACHE_PATH" 2>/dev/null || echo "0B")
         local gradle_wrapper_size=$(get_size "$GRADLE_WRAPPER_PATH" 2>/dev/null || echo "0B")
-        gradle_size="Gradle: $gradle_cache_size (caches) + $gradle_wrapper_size (wrapper)"
+        summary_items+=("Gradle: $gradle_cache_size (caches) + $gradle_wrapper_size (wrapper)")
+        has_targets=true
     fi
     
-    # Check npm (complete directory)
+    # Node.js (npm + yarn + pnpm)
     if [[ -d "$NPM_FULL_PATH" ]]; then
+        local npm_size=$(get_size "$NPM_FULL_PATH")
+        summary_items+=("npm: $npm_size (complete directory)")
         has_targets=true
-        npm_size="npm: $(get_size "$NPM_FULL_PATH")"
     fi
     
-    # Check Cargo
-    if [[ -d "$CARGO_REGISTRY_PATH" ]] || [[ -d "$CARGO_GIT_PATH" ]]; then
-        has_targets=true
-        local cargo_registry_size=$(get_size "$CARGO_REGISTRY_PATH" 2>/dev/null || echo "0B")
-        local cargo_git_size=$(get_size "$CARGO_GIT_PATH" 2>/dev/null || echo "0B")
-        cargo_size="Cargo: $cargo_registry_size (registry) + $cargo_git_size (git)"
-    fi
-    
-    # Check Composer
-    if [[ -d "$COMPOSER_CACHE_PATH" ]]; then
-        has_targets=true
-        composer_size="Composer: $(get_size "$COMPOSER_CACHE_PATH")"
-    fi
-    
-    # Check pip (both possible locations)
-    local pip_found=false
-    for pip_cache in "${HOME}/Library/Caches/pip" "${HOME}/.cache/pip"; do
-        if [[ -d "$pip_cache" ]]; then
-            pip_found=true
-            pip_size="pip: $(get_size "$pip_cache")"
+    # Yarn
+    local yarn_dirs=("${HOME}/Library/Caches/Yarn" "${HOME}/.yarn/cache" "${HOME}/.cache/yarn")
+    for yarn_dir in "${yarn_dirs[@]}"; do
+        if [[ -d "$yarn_dir" ]]; then
+            local yarn_size=$(get_size "$yarn_dir")
+            summary_items+=("Yarn: $yarn_size")
+            has_targets=true
             break
         fi
     done
-    if [[ "$pip_found" == true ]]; then
-        has_targets=true
-    fi
     
-    # Check poetry (both possible locations)
-    local poetry_found=false
-    for poetry_cache in "${HOME}/Library/Caches/pypoetry" "${HOME}/.cache/pypoetry"; do
-        if [[ -d "$poetry_cache" ]]; then
-            poetry_found=true
-            poetry_size="poetry: $(get_size "$poetry_cache") (includes virtualenvs)"
+    # pnpm
+    local pnpm_dirs=("${HOME}/Library/pnpm/store" "${HOME}/.local/share/pnpm/store" "${HOME}/.pnpm-store")
+    for pnpm_dir in "${pnpm_dirs[@]}"; do
+        if [[ -d "$pnpm_dir" ]]; then
+            local pnpm_size=$(get_size "$pnpm_dir")
+            summary_items+=("pnpm: $pnpm_size")
+            has_targets=true
             break
         fi
     done
-    if [[ "$poetry_found" == true ]]; then
-        has_targets=true
-    fi
     
-    # Check Maven (included for completeness)
-    if [[ -d "$MAVEN_REPO_PATH" ]]; then
-        has_targets=true
-        maven_size="Maven: $(get_size "$MAVEN_REPO_PATH")"
-    fi
+    # Python (pip + poetry with virtualenvs)
+    local pip_dirs=("${HOME}/Library/Caches/pip" "${HOME}/.cache/pip")
+    for pip_dir in "${pip_dirs[@]}"; do
+        if [[ -d "$pip_dir" ]]; then
+            local pip_size=$(get_size "$pip_dir")
+            summary_items+=("pip: $pip_size")
+            has_targets=true
+            break
+        fi
+    done
+    
+    local poetry_dirs=("${HOME}/Library/Caches/pypoetry" "${HOME}/.cache/pypoetry")
+    for poetry_dir in "${poetry_dirs[@]}"; do
+        if [[ -d "$poetry_dir" ]]; then
+            local poetry_size=$(get_size "$poetry_dir")
+            summary_items+=("poetry: $poetry_size (includes virtualenvs)")
+            has_targets=true
+            break
+        fi
+    done
     
     # Guard clause: nothing to clean
     if [[ "$has_targets" == false ]]; then
@@ -110,98 +108,56 @@ function nuclear_devtools_clean() {
     
     # Analyze mode
     if [[ "$ANALYZE_MODE" == true ]]; then
-        [[ -n "$gradle_size" ]] && register_if_analyzing "Dev Tools (Nuclear)" "Gradle complete" "$GRADLE_CACHE_PATH"
+        [[ -d "$MAVEN_REPO_PATH" ]] && register_if_analyzing "Dev Tools (Nuclear)" "Maven repository" "$MAVEN_REPO_PATH"
+        [[ -d "$GRADLE_CACHE_PATH" ]] && register_if_analyzing "Dev Tools (Nuclear)" "Gradle caches" "$GRADLE_CACHE_PATH"
         [[ -d "$GRADLE_WRAPPER_PATH" ]] && register_if_analyzing "Dev Tools (Nuclear)" "Gradle wrapper" "$GRADLE_WRAPPER_PATH"
-        [[ -n "$npm_size" ]] && register_if_analyzing "Dev Tools (Nuclear)" "npm complete" "$NPM_FULL_PATH"
-        [[ -n "$cargo_size" ]] && register_if_analyzing "Dev Tools (Nuclear)" "Cargo registry" "$CARGO_REGISTRY_PATH"
-        [[ -d "$CARGO_GIT_PATH" ]] && register_if_analyzing "Dev Tools (Nuclear)" "Cargo git" "$CARGO_GIT_PATH"
-        [[ -n "$composer_size" ]] && register_if_analyzing "Dev Tools (Nuclear)" "Composer cache" "$COMPOSER_CACHE_PATH"
-        [[ -n "$pip_size" ]] && register_if_analyzing "Dev Tools (Nuclear)" "pip cache" "${HOME}/Library/Caches/pip"
-        [[ -n "$poetry_size" ]] && register_if_analyzing "Dev Tools (Nuclear)" "poetry complete" "${HOME}/Library/Caches/pypoetry"
-        [[ -n "$maven_size" ]] && register_if_analyzing "Dev Tools (Nuclear)" "Maven repository" "$MAVEN_REPO_PATH"
+        [[ -d "$NPM_FULL_PATH" ]] && register_if_analyzing "Dev Tools (Nuclear)" "npm complete" "$NPM_FULL_PATH"
+        
+        for yarn_dir in "${yarn_dirs[@]}"; do
+            [[ -d "$yarn_dir" ]] && register_if_analyzing "Dev Tools (Nuclear)" "Yarn cache" "$yarn_dir" && break
+        done
+        
+        for pnpm_dir in "${pnpm_dirs[@]}"; do
+            [[ -d "$pnpm_dir" ]] && register_if_analyzing "Dev Tools (Nuclear)" "pnpm store" "$pnpm_dir" && break
+        done
+        
+        for pip_dir in "${pip_dirs[@]}"; do
+            [[ -d "$pip_dir" ]] && register_if_analyzing "Dev Tools (Nuclear)" "pip cache" "$pip_dir" && break
+        done
+        
+        for poetry_dir in "${poetry_dirs[@]}"; do
+            [[ -d "$poetry_dir" ]] && register_if_analyzing "Dev Tools (Nuclear)" "poetry complete" "$poetry_dir" && break
+        done
+        
         return 0
     fi
     
-    # Show what will be deleted
+    # Show summary of what will be deleted
     log_warn "The following will be COMPLETELY DELETED:"
     echo ""
-    [[ -n "$gradle_size" ]] && echo "  • $gradle_size"
-    [[ -n "$npm_size" ]] && echo "  • $npm_size"
-    [[ -n "$cargo_size" ]] && echo "  • $cargo_size"
-    [[ -n "$composer_size" ]] && echo "  • $composer_size"
-    [[ -n "$pip_size" ]] && echo "  • $pip_size"
-    [[ -n "$poetry_size" ]] && echo "  • $poetry_size"
-    [[ -n "$maven_size" ]] && echo "  • $maven_size"
+    for item in "${summary_items[@]}"; do
+        echo "  • $item"
+    done
     echo ""
     
-    # Confirm (NEVER auto-confirms)
+    # Single confirmation (NEVER auto-confirms)
     if ! confirm_nuclear "Delete ALL development tool caches"; then
         return 1
     fi
     
-    # Execute cleanup
-    local cleaned=false
+    # Set flag to skip individual module confirmations
+    export NUCLEAR_CONFIRMED=true
     
-    # Gradle
-    if [[ -d "$GRADLE_CACHE_PATH" ]]; then
-        safe_rm "$GRADLE_CACHE_PATH" "Gradle caches"
-        cleaned=true
-    fi
-    if [[ -d "$GRADLE_WRAPPER_PATH" ]]; then
-        safe_rm "$GRADLE_WRAPPER_PATH" "Gradle wrapper"
-        cleaned=true
-    fi
+    # Execute cleanup by calling each module's nuclear function
+    nuclear_maven_clean
+    nuclear_gradle_clean
+    nuclear_node_clean
+    nuclear_python_clean
     
-    # npm
-    if [[ -d "$NPM_FULL_PATH" ]]; then
-        safe_rm "$NPM_FULL_PATH" "npm directory"
-        cleaned=true
-    fi
+    # Cleanup flag
+    unset NUCLEAR_CONFIRMED
     
-    # Cargo
-    if [[ -d "$CARGO_REGISTRY_PATH" ]]; then
-        safe_rm "$CARGO_REGISTRY_PATH" "Cargo registry"
-        cleaned=true
-    fi
-    if [[ -d "$CARGO_GIT_PATH" ]]; then
-        safe_rm "$CARGO_GIT_PATH" "Cargo git"
-        cleaned=true
-    fi
-    
-    # Composer
-    if [[ -d "$COMPOSER_CACHE_PATH" ]]; then
-        safe_rm "$COMPOSER_CACHE_PATH" "Composer cache"
-        cleaned=true
-    fi
-    
-    # pip (both locations)
-    for pip_cache in "${HOME}/Library/Caches/pip" "${HOME}/.cache/pip"; do
-        if [[ -d "$pip_cache" ]]; then
-            safe_rm "$pip_cache" "pip cache"
-            cleaned=true
-        fi
-    done
-    
-    # poetry (both locations)
-    for poetry_cache in "${HOME}/Library/Caches/pypoetry" "${HOME}/.cache/pypoetry"; do
-        if [[ -d "$poetry_cache" ]]; then
-            safe_rm "$poetry_cache" "poetry cache"
-            cleaned=true
-        fi
-    done
-    
-    # Maven
-    if [[ -d "$MAVEN_REPO_PATH" ]]; then
-        safe_rm "$MAVEN_REPO_PATH" "Maven repository"
-        cleaned=true
-    fi
-    
-    if [[ "$cleaned" == true ]]; then
-        log_success "Nuclear cleanup completed - ALL development tool caches destroyed"
-    else
-        log_info "No caches were found to clean"
-    fi
-    
+    log_success "Nuclear cleanup completed - ALL development tool caches destroyed"
     return 0
 }
 

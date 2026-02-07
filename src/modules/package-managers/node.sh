@@ -136,3 +136,96 @@ function clear_nvm_cache() {
     safe_rm "$NVM_CACHE_PATH" "NVM cache"
     log_success "NVM cache cleared ($nvm_size freed)"
 }
+
+# Nuclear cleanup for Node.js - removes complete npm, yarn, and pnpm directories
+# Returns: 0 on success
+function nuclear_node_clean() {
+    local has_targets=false
+    
+    # Check npm
+    if [[ -d "$NPM_FULL_PATH" ]]; then
+        has_targets=true
+    fi
+    
+    # Check yarn
+    local yarn_cache_dirs=(
+        "${HOME}/Library/Caches/Yarn"
+        "${HOME}/.yarn/cache"
+        "${HOME}/.cache/yarn"
+    )
+    for yarn_cache_dir in "${yarn_cache_dirs[@]}"; do
+        if [[ -d "$yarn_cache_dir" ]]; then
+            has_targets=true
+            break
+        fi
+    done
+    
+    # Check pnpm
+    local pnpm_cache_dirs=(
+        "${HOME}/Library/pnpm/store"
+        "${HOME}/.local/share/pnpm/store"
+        "${HOME}/.pnpm-store"
+    )
+    for pnpm_cache_dir in "${pnpm_cache_dirs[@]}"; do
+        if [[ -d "$pnpm_cache_dir" ]]; then
+            has_targets=true
+            break
+        fi
+    done
+    
+    if [[ "$has_targets" == false ]]; then
+        return 0
+    fi
+    
+    # Skip confirmation if already confirmed at orchestrator level
+    if [[ "${NUCLEAR_CONFIRMED:-false}" == "true" ]]; then
+        # npm (complete directory)
+        if [[ -d "$NPM_FULL_PATH" ]]; then
+            safe_rm "$NPM_FULL_PATH" "npm directory (nuclear)"
+        fi
+        
+        # Yarn (all locations)
+        for yarn_cache_dir in "${yarn_cache_dirs[@]}"; do
+            if [[ -d "$yarn_cache_dir" ]]; then
+                safe_rm "$yarn_cache_dir" "Yarn cache (nuclear)"
+            fi
+        done
+        
+        # pnpm (all locations)
+        for pnpm_cache_dir in "${pnpm_cache_dirs[@]}"; do
+            if [[ -d "$pnpm_cache_dir" ]]; then
+                safe_rm "$pnpm_cache_dir" "pnpm store (nuclear)"
+            fi
+        done
+        
+        return 0
+    fi
+    
+    # Fallback: individual confirmation (shouldn't reach here in normal flow)
+    local npm_size=$(get_size "$NPM_FULL_PATH" 2>/dev/null || echo "0B")
+    
+    if confirm_nuclear "Delete complete npm ($npm_size), yarn, and pnpm directories"; then
+        # npm (complete directory)
+        if [[ -d "$NPM_FULL_PATH" ]]; then
+            safe_rm "$NPM_FULL_PATH" "npm directory (nuclear)"
+        fi
+        
+        # Yarn (all locations)
+        for yarn_cache_dir in "${yarn_cache_dirs[@]}"; do
+            if [[ -d "$yarn_cache_dir" ]]; then
+                safe_rm "$yarn_cache_dir" "Yarn cache (nuclear)"
+            fi
+        done
+        
+        # pnpm (all locations)
+        for pnpm_cache_dir in "${pnpm_cache_dirs[@]}"; do
+            if [[ -d "$pnpm_cache_dir" ]]; then
+                safe_rm "$pnpm_cache_dir" "pnpm store (nuclear)"
+            fi
+        done
+        
+        return 0
+    fi
+    
+    return 1
+}
