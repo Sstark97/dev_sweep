@@ -60,9 +60,6 @@ readonly NODE_MODULES_MAX_DEPTH=6
 # Nuclear mode paths (complete cleanup without exceptions)
 readonly GRADLE_WRAPPER_PATH="${HOME}/.gradle/wrapper"
 readonly NPM_FULL_PATH="${HOME}/.npm"
-readonly CARGO_REGISTRY_PATH="${HOME}/.cargo/registry"
-readonly CARGO_GIT_PATH="${HOME}/.cargo/git"
-readonly COMPOSER_CACHE_PATH="${HOME}/.composer/cache"
 
 readonly CHROME_AI_MODEL_PATH="${HOME}/Library/Application Support/Google/Chrome/OptGuideOnDeviceModel"
 

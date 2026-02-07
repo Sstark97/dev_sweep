@@ -51,9 +51,6 @@ function test_nuclear_paths_are_defined() {
     # All nuclear paths should be defined as readonly
     assert_not_empty "$GRADLE_WRAPPER_PATH"
     assert_not_empty "$NPM_FULL_PATH"
-    assert_not_empty "$CARGO_REGISTRY_PATH"
-    assert_not_empty "$CARGO_GIT_PATH"
-    assert_not_empty "$COMPOSER_CACHE_PATH"
 }
 
 function test_gradle_wrapper_path_points_to_gradle_wrapper() {
@@ -68,19 +65,7 @@ function test_npm_full_path_points_to_npm_directory() {
     assert_successful_code "$?"
 }
 
-function test_cargo_paths_point_to_cargo_directories() {
-    # Should end with ".cargo/registry" and ".cargo/git"
-    [[ "$CARGO_REGISTRY_PATH" == *".cargo/registry" ]]
-    assert_successful_code "$?"
-    [[ "$CARGO_GIT_PATH" == *".cargo/git" ]]
-    assert_successful_code "$?"
-}
 
-function test_composer_path_points_to_composer_cache() {
-    # Should end with ".composer/cache"
-    [[ "$COMPOSER_CACHE_PATH" == *".composer/cache" ]]
-    assert_successful_code "$?"
-}
 
 # ============================================================
 # CONFIRM_NUCLEAR TESTS
@@ -224,42 +209,6 @@ function test_nuclear_detects_npm_directory() {
     assert_successful_code "$?"
 }
 
-function test_nuclear_detects_cargo_registry() {
-    ANALYZE_MODE=true
-    NUCLEAR_MODE=true
-    
-    local original_home="$HOME"
-    HOME="$TEST_TEMP_DIR"
-    
-    # Create mock Cargo registry
-    mkdir -p "$TEST_TEMP_DIR/.cargo/registry"
-    echo "test" > "$TEST_TEMP_DIR/.cargo/registry/test.txt"
-    
-    nuclear_devtools_clean 2>/dev/null
-    
-    HOME="$original_home"
-    
-    assert_successful_code "$?"
-}
-
-function test_nuclear_detects_composer_cache() {
-    ANALYZE_MODE=true
-    NUCLEAR_MODE=true
-    
-    local original_home="$HOME"
-    HOME="$TEST_TEMP_DIR"
-    
-    # Create mock Composer cache
-    mkdir -p "$TEST_TEMP_DIR/.composer/cache"
-    echo "test" > "$TEST_TEMP_DIR/.composer/cache/test.txt"
-    
-    nuclear_devtools_clean 2>/dev/null
-    
-    HOME="$original_home"
-    
-    assert_successful_code "$?"
-}
-
 function test_nuclear_detects_pip_cache_macos() {
     ANALYZE_MODE=true
     NUCLEAR_MODE=true
@@ -306,14 +255,117 @@ function test_nuclear_with_multiple_caches() {
     # Create multiple mock caches
     mkdir -p "$TEST_TEMP_DIR/.gradle/caches"
     mkdir -p "$TEST_TEMP_DIR/.npm"
-    mkdir -p "$TEST_TEMP_DIR/.cargo/registry"
+    mkdir -p "$TEST_TEMP_DIR/.m2/repository"
     echo "test" > "$TEST_TEMP_DIR/.gradle/caches/test.txt"
     echo "test" > "$TEST_TEMP_DIR/.npm/test.txt"
-    echo "test" > "$TEST_TEMP_DIR/.cargo/registry/test.txt"
+    echo "test" > "$TEST_TEMP_DIR/.m2/repository/test.txt"
     
     nuclear_devtools_clean 2>/dev/null
     
     HOME="$original_home"
     
     assert_successful_code "$?"
+}
+
+# ============================================================
+# MODULE NUCLEAR FUNCTION TESTS
+# ============================================================
+
+function test_nuclear_maven_clean_function_exists() {
+    # Function should be defined
+    declare -f nuclear_maven_clean > /dev/null
+    assert_successful_code "$?"
+}
+
+function test_nuclear_gradle_clean_function_exists() {
+    # Function should be defined
+    declare -f nuclear_gradle_clean > /dev/null
+    assert_successful_code "$?"
+}
+
+function test_nuclear_node_clean_function_exists() {
+    # Function should be defined
+    declare -f nuclear_node_clean > /dev/null
+    assert_successful_code "$?"
+}
+
+function test_nuclear_python_clean_function_exists() {
+    # Function should be defined
+    declare -f nuclear_python_clean > /dev/null
+    assert_successful_code "$?"
+}
+
+function test_nuclear_maven_clean_with_confirmed_flag() {
+    DRY_RUN=true
+    export NUCLEAR_CONFIRMED=true
+    
+    local original_home="$HOME"
+    HOME="$TEST_TEMP_DIR"
+    
+    mkdir -p "$TEST_TEMP_DIR/.m2/repository"
+    echo "test" > "$TEST_TEMP_DIR/.m2/repository/test.txt"
+    
+    nuclear_maven_clean 2>/dev/null
+    local result=$?
+    
+    HOME="$original_home"
+    unset NUCLEAR_CONFIRMED
+    
+    # Should succeed without prompting
+    assert_successful_code "$result"
+}
+
+function test_nuclear_gradle_clean_with_confirmed_flag() {
+    DRY_RUN=true
+    export NUCLEAR_CONFIRMED=true
+    
+    local original_home="$HOME"
+    HOME="$TEST_TEMP_DIR"
+    
+    mkdir -p "$TEST_TEMP_DIR/.gradle/caches"
+    mkdir -p "$TEST_TEMP_DIR/.gradle/wrapper"
+    
+    nuclear_gradle_clean 2>/dev/null
+    local result=$?
+    
+    HOME="$original_home"
+    unset NUCLEAR_CONFIRMED
+    
+    assert_successful_code "$result"
+}
+
+function test_nuclear_node_clean_with_confirmed_flag() {
+    DRY_RUN=true
+    export NUCLEAR_CONFIRMED=true
+    
+    local original_home="$HOME"
+    HOME="$TEST_TEMP_DIR"
+    
+    mkdir -p "$TEST_TEMP_DIR/.npm"
+    
+    nuclear_node_clean 2>/dev/null
+    local result=$?
+    
+    HOME="$original_home"
+    unset NUCLEAR_CONFIRMED
+    
+    assert_successful_code "$result"
+}
+
+function test_nuclear_python_clean_with_confirmed_flag() {
+    DRY_RUN=true
+    export NUCLEAR_CONFIRMED=true
+    
+    local original_home="$HOME"
+    HOME="$TEST_TEMP_DIR"
+    
+    mkdir -p "$TEST_TEMP_DIR/Library/Caches/pip"
+    
+    nuclear_python_clean 2>/dev/null
+    local result=$?
+    
+    HOME="$original_home"
+    unset NUCLEAR_CONFIRMED
+    
+    assert_successful_code "$result"
 }

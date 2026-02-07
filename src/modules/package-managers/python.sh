@@ -98,3 +98,85 @@ function clear_python_package_caches() {
         log_info "No Python package managers found"
     fi
 }
+
+# Nuclear cleanup for Python - removes pip and poetry caches including virtualenvs
+# Returns: 0 on success
+function nuclear_python_clean() {
+    local has_targets=false
+    
+    # Check pip
+    local pip_cache_dirs=(
+        "${HOME}/Library/Caches/pip"
+        "${HOME}/.cache/pip"
+    )
+    for pip_cache_dir in "${pip_cache_dirs[@]}"; do
+        if [[ -d "$pip_cache_dir" ]]; then
+            has_targets=true
+            break
+        fi
+    done
+    
+    # Check poetry
+    local poetry_cache_dirs=(
+        "${HOME}/Library/Caches/pypoetry"
+        "${HOME}/.cache/pypoetry"
+    )
+    for poetry_cache_dir in "${poetry_cache_dirs[@]}"; do
+        if [[ -d "$poetry_cache_dir" ]]; then
+            has_targets=true
+            break
+        fi
+    done
+    
+    if [[ "$has_targets" == false ]]; then
+        return 0
+    fi
+    
+    # Skip confirmation if already confirmed at orchestrator level
+    if [[ "${NUCLEAR_CONFIRMED:-false}" == "true" ]]; then
+        # pip (all locations)
+        for pip_cache_dir in "${pip_cache_dirs[@]}"; do
+            if [[ -d "$pip_cache_dir" ]]; then
+                safe_rm "$pip_cache_dir" "pip cache (nuclear)"
+            fi
+        done
+        
+        # poetry (all locations, includes virtualenvs)
+        for poetry_cache_dir in "${poetry_cache_dirs[@]}"; do
+            if [[ -d "$poetry_cache_dir" ]]; then
+                safe_rm "$poetry_cache_dir" "poetry cache with virtualenvs (nuclear)"
+            fi
+        done
+        
+        return 0
+    fi
+    
+    # Fallback: individual confirmation (shouldn't reach here in normal flow)
+    local pip_size=""
+    for pip_cache_dir in "${pip_cache_dirs[@]}"; do
+        if [[ -d "$pip_cache_dir" ]]; then
+            pip_size=$(get_size "$pip_cache_dir")
+            break
+        fi
+    done
+    
+    if confirm_nuclear "Delete pip cache ($pip_size) and poetry (including virtualenvs)"; then
+        # pip (all locations)
+        for pip_cache_dir in "${pip_cache_dirs[@]}"; do
+            if [[ -d "$pip_cache_dir" ]]; then
+                safe_rm "$pip_cache_dir" "pip cache (nuclear)"
+            fi
+        done
+        
+        # poetry (all locations, includes virtualenvs)
+        for poetry_cache_dir in "${poetry_cache_dirs[@]}"; do
+            if [[ -d "$poetry_cache_dir" ]]; then
+                safe_rm "$poetry_cache_dir" "poetry cache with virtualenvs (nuclear)"
+            fi
+        done
+        
+        return 0
+    fi
+    
+    return 1
+}
