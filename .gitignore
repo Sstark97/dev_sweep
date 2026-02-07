@@ -41,3 +41,52 @@ build/
 # Local environment
 .env
 .env.local
+
+# .NET
+## Build results
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+
+## User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Visual Studio
+.vs/
+.vscode/
+
+## Rider
+.idea/
+
+## Build artifacts
+*.exe
+*.dll
+*.pdb
+*.cache
+*.vsidx
+*.vspscc
+*.vssscc
+
+## Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+!**/packages/build/
+
+## AOT
+*.staticwebassetsruntime.json
+*.runtimeconfig.json
+
+## Benchmark results
+BenchmarkDotNet.Artifacts/

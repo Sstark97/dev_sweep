@@ -1,30 +1,40 @@
-name: Tests
+name: Bash CI
 
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'bash/**'
+      - '.github/workflows/bash-ci.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'bash/**'
+      - '.github/workflows/bash-ci.yml'
+
+defaults:
+  run:
+    working-directory: bash
 
 jobs:
   test:
     runs-on: macos-latest
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Syntax check
         run: make check
-      
+
       - name: Install bashunit
         run: make install-bashunit
-      
+
       - name: Run tests
         run: make test
-      
+
       - name: Lint with shellcheck
         run: |
           if command -v shellcheck >/dev/null 2>&1; then

@@ -1,0 +1,48 @@
+name: .NET CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'net/**'
+      - '.github/workflows/net-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'net/**'
+      - '.github/workflows/net-ci.yml'
+
+defaults:
+  run:
+    working-directory: net
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+      - name: Publish AOT (Release)
+        if: matrix.os == 'macos-latest'
+        run: dotnet publish -c Release -r osx-arm64

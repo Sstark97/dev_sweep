@@ -2,22 +2,34 @@
   <img src="assets/icon.webp" alt="DevSweep Logo" width="200" />
   
   # DevSweep
-  
-  **Professional macOS developer cache cleaner**
-  
+
+  **Professional developer cache cleaner for macOS, Linux, and Windows**
+
   _Reclaim gigabytes of disk space safely and intelligently_
 
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Bash](https://img.shields.io/badge/Bash-5.0+-blue.svg)](https://www.gnu.org/software/bash/)
-  [![Platform](https://img.shields.io/badge/Platform-macOS-lightgrey.svg)](https://www.apple.com/macos/)
-  [![Tests](https://github.com/Sstark97/dev_sweep/actions/workflows/test.yml/badge.svg)](https://github.com/Sstark97/dev_sweep/actions/workflows/test.yml)
+  [![.NET](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](https://dotnet.microsoft.com/)
+  [![Platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Linux%20%7C%20Windows-lightgrey.svg)](https://github.com/Sstark97/dev_sweep)
 </div>
 
 ---
 
 ## 🎯 Overview
 
-DevSweep is a **production-grade CLI tool** that safely cleans deep system caches on macOS, helping developers reclaim valuable disk space without compromising system stability.
+DevSweep is a **production-grade CLI tool** that safely cleans deep system caches, helping developers reclaim valuable disk space without compromising system stability.
+
+> **📢 Migration in Progress**: DevSweep is migrating from Bash (v1.x, macOS only) to .NET 10 AOT (v2.x, cross-platform). See [PROGRESS.md](PROGRESS.md) for details.
+
+### 🔀 Versions
+
+| Version | Platform | Status | Location |
+|---------|----------|--------|----------|
+| **v1.x (Bash)** | macOS only | ✅ Production | [`bash/`](bash/) |
+| **v2.x (.NET 10 AOT)** | macOS, Linux, Windows | 🚧 In Development | `net/` |
+
+**Current stable version**: v1.x (Bash) - Fully functional, production-ready
+**Future version**: v2.x (.NET) - Cross-platform, hexagonal architecture, MCP server support
 
 ### 📺 See It In Action
 
@@ -49,6 +61,8 @@ DevSweep is a **production-grade CLI tool** that safely cleans deep system cache
 
 ## 📦 Installation
 
+> **Note**: These instructions are for v1.x (Bash). v2.x (.NET) installation will be documented when available.
+
 ### Homebrew (Recommended)
 
 ```bash
@@ -64,7 +78,7 @@ brew install devsweep
 ```bash
 # Clone and install locally (no sudo required)
 git clone https://github.com/Sstark97/dev_sweep.git
-cd dev_sweep
+cd dev_sweep/bash
 make install-local
 
 # Verify installation
@@ -77,7 +91,7 @@ The command will be available at `~/.local/bin/devsweep`
 
 ```bash
 git clone https://github.com/Sstark97/dev_sweep.git
-cd dev_sweep
+cd dev_sweep/bash
 sudo make install
 
 # Available globally
@@ -91,7 +105,8 @@ devsweep --version
 brew uninstall devsweep
 brew untap sstark97/tap
 
-# Local installation
+# Local installation (from bash/ directory)
+cd dev_sweep/bash
 make uninstall-local
 
 # System-wide
@@ -196,7 +211,9 @@ devsweep --force --all
 
 ## 💻 Development
 
-### Prerequisites
+> **Note**: These instructions are for v1.x (Bash). For v2.x (.NET) development, see [PROGRESS.md](PROGRESS.md).
+
+### Prerequisites (v1.x - Bash)
 
 - macOS 10.15+
 - Bash 5.0+
@@ -207,7 +224,7 @@ devsweep --force --all
 ```bash
 # Clone repository
 git clone https://github.com/Sstark97/dev_sweep.git
-cd dev_sweep
+cd dev_sweep/bash
 
 # Install dependencies
 make setup
@@ -244,23 +261,19 @@ make clean             # Remove temporary files
 
 ```
 dev_sweep/
-├── bin/
-│   └── devsweep              # Main entry point
-├── src/
-│   ├── modules/              # Cleanup modules
-│   │   ├── jetbrains.sh      # JetBrains IDE cleanup
-│   │   ├── docker.sh         # Docker/OrbStack cleanup
-│   │   ├── homebrew.sh       # Homebrew cleanup
-│   │   └── devtools.sh       # Dev tools cleanup
-│   └── utils/                # Shared utilities
-│       ├── config.sh         # Configuration
-│       ├── common.sh         # Common functions
-│       └── menu.sh           # Interactive menu
-├── tests/
-│   ├── unit/                 # Unit tests (112 tests)
-│   └── e2e/                  # E2E tests (11 tests)
-├── Makefile                  # Build automation
-└── .bashunit.yml             # Test configuration
+├── bash/                     # v1.x - Bash version (macOS only)
+│   ├── bin/
+│   │   └── devsweep          # Main entry point
+│   ├── src/
+│   │   ├── modules/          # Cleanup modules
+│   │   └── utils/            # Shared utilities
+│   ├── tests/                # 123 tests (112 unit + 11 e2e)
+│   ├── Makefile              # Build automation
+│   └── .bashunit.yml         # Test configuration
+├── net/                      # v2.x - .NET 10 AOT (cross-platform) [Coming soon]
+├── PROGRESS.md               # Migration roadmap
+├── README.md                 # This file
+└── CONTRIBUTING.md           # Contribution guidelines
 ```
 
 ## 🔄 For Maintainers
@@ -336,9 +349,16 @@ Coverage:   All modules tested, following testing pyramid
 
 ## 🔮 Roadmap
 
-- [ ] Add more modules (Xcode, Gradle)
-- [ ] Windows Support: Planning a rewrite in .NET 10 Native AOT for cross-platform compatibility
-- [ ] MCP Server Integration (AI Agent Support) - Planned for v2 (.NET)
+See [PROGRESS.md](PROGRESS.md) for the complete migration roadmap.
+
+### v2.x (.NET 10 AOT) - In Progress
+- [ ] Cross-platform support (macOS, Linux, Windows)
+- [ ] Hexagonal architecture with clean code principles
+- [ ] System module for OS caches and logs cleanup
+- [ ] MCP Server Integration (AI Agent Support)
+- [ ] Rich terminal UI with Spectre.Console
+- [ ] JSON output mode for programmatic use
+- [ ] Native AOT compilation (~75% faster startup)
 
 
 ## 🤝 Contributing
@@ -361,10 +381,13 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## 📚 Documentation
 
-- [QUICKSTART.md](QUICKSTART.md) - Quick start guide
-- [QUICKSTART_RELEASE.md](QUICKSTART_RELEASE.md) - Release workflow guide
-- [HOMEBREW_CORE_SUBMISSION.md](HOMEBREW_CORE_SUBMISSION.md) - Homebrew publishing guide
+- [PROGRESS.md](PROGRESS.md) - Migration roadmap and current status
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
+
+### v1.x (Bash) Documentation
+- [QUICKSTART.md](bash/QUICKSTART.md) - Quick start guide
+- [QUICKSTART_RELEASE.md](bash/QUICKSTART_RELEASE.md) - Release workflow guide
+- [HOMEBREW_CORE_SUBMISSION.md](bash/HOMEBREW_CORE_SUBMISSION.md) - Homebrew publishing guide
 
 ## 🔗 Links
 
