@@ -83,6 +83,8 @@ show_help() {
     echo "    -a, --analyze       Analyze and show cleanup preview with estimated space"
     echo "    --verbose           Show detailed output"
     echo "    -f, --force, -y, --yes    Skip all confirmations (dangerous!)"
+    echo "    --nuclear           DANGER: Delete ALL dev tool caches (requires --devtools)"
+    echo "                        Note: --force does NOT skip nuclear confirmation"
     echo ""
     echo -e "${CYAN}MODULES:${NC}"
     echo "    --jetbrains         Clean JetBrains IDEs (old versions & caches)"
@@ -112,7 +114,10 @@ show_help() {
     echo "    # Full cleanup with verbose output"
     echo "    devsweep --verbose --all"
     echo ""
-    echo "    # Nuclear option (skip confirmations)"
+    echo "    # Nuclear cleanup of ALL development tools"
+    echo "    devsweep --nuclear --devtools"
+    echo ""
+    echo "    # Force mode (skip confirmations, but NOT nuclear)"
     echo "    devsweep --force --all"
     echo ""
     echo -e "${CYAN}SAFETY FEATURES:${NC}"
@@ -178,6 +183,11 @@ parse_arguments() {
                 log_warn "Force mode enabled - confirmations will be skipped!"
                 shift
                 ;;
+            --nuclear)
+                NUCLEAR_MODE=true
+                log_warn "NUCLEAR MODE enabled - ALL caches will be destroyed!"
+                shift
+                ;;
             --all)
                 SELECTED_MODULES=("jetbrains" "docker" "homebrew" "devtools" "projects" "system")
                 shift
@@ -221,6 +231,23 @@ parse_arguments() {
         echo ""
         echo "Run 'devsweep --help' for usage information"
         exit "$EXIT_INVALID_ARGS"
+    fi
+    
+    # Nuclear mode requires devtools module
+    if [[ "$NUCLEAR_MODE" == true ]]; then
+        local has_devtools=false
+        for mod in "${SELECTED_MODULES[@]}"; do
+            if [[ "$mod" == "devtools" ]]; then
+                has_devtools=true
+                break
+            fi
+        done
+        if [[ "$has_devtools" == false ]]; then
+            log_error "--nuclear requires --devtools or --all"
+            echo ""
+            echo "Run 'devsweep --help' for usage information"
+            exit "$EXIT_INVALID_ARGS"
+        fi
     fi
 }
 
@@ -274,13 +301,23 @@ run_modules() {
                 fi
                 ;;
             devtools)
-                if devtools_clean; then
-                    if [[ "$ANALYZE_MODE" != true ]]; then
-                        log_success "Module completed: devtools"
+                if [[ "$NUCLEAR_MODE" == true ]]; then
+                    if nuclear_devtools_clean; then
+                        if [[ "$ANALYZE_MODE" != true ]]; then
+                            log_success "Module completed: devtools (nuclear)"
+                        fi
+                    else
+                        log_warn "Module cancelled: devtools (nuclear)"
                     fi
                 else
-                    log_error "Module failed: devtools"
-                    ((failed++))
+                    if devtools_clean; then
+                        if [[ "$ANALYZE_MODE" != true ]]; then
+                            log_success "Module completed: devtools"
+                        fi
+                    else
+                        log_error "Module failed: devtools"
+                        ((failed++))
+                    fi
                 fi
                 ;;
             projects)
