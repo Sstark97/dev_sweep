@@ -58,13 +58,27 @@ log_debug() {
     fi
 }
 
-# Print section header
-log_section() {
-    local title="$1"
+# Nuclear mode confirmation - NEVER auto-confirms, even with --force
+# Usage: confirm_nuclear <action_description>
+# Returns: 0 if user types "yes", 1 otherwise
+confirm_nuclear() {
+    local action="$1"
+
     echo ""
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BLUE}${title}${NC}"
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    log_warn "⚠️  NUCLEAR MODE: $action"
+    log_warn "This will DELETE ALL caches and dependencies."
+    log_warn "You will need to re-download everything on next build."
+    log_warn "The --force flag does NOT skip this confirmation."
+    echo ""
+    echo -en "${RED}Type 'yes' to confirm:${NC} "
+    read -r response
+
+    if [[ "$response" == "yes" ]]; then
+        return 0
+    else
+        log_info "Nuclear action cancelled"
+        return 1
+    fi
 }
 
 # ============================================================

@@ -24,6 +24,7 @@ DRY_RUN=false
 VERBOSE=false
 FORCE=false
 ANALYZE_MODE=false
+NUCLEAR_MODE=false
 
 # Space tracking (accumulated across all cleanup operations)
 TOTAL_SPACE_FREED_KB=0
@@ -55,6 +56,13 @@ readonly SDKMAN_TMP_PATH="${HOME}/.sdkman/tmp"
 # Stale node_modules scanning (search rooted at HOME)
 readonly NODE_MODULES_STALE_DAYS=90
 readonly NODE_MODULES_MAX_DEPTH=6
+
+# Nuclear mode paths (complete cleanup without exceptions)
+readonly GRADLE_WRAPPER_PATH="${HOME}/.gradle/wrapper"
+readonly NPM_FULL_PATH="${HOME}/.npm"
+readonly CARGO_REGISTRY_PATH="${HOME}/.cargo/registry"
+readonly CARGO_GIT_PATH="${HOME}/.cargo/git"
+readonly COMPOSER_CACHE_PATH="${HOME}/.composer/cache"
 
 readonly CHROME_AI_MODEL_PATH="${HOME}/Library/Application Support/Google/Chrome/OptGuideOnDeviceModel"
 
