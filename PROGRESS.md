@@ -17,12 +17,12 @@ dev_sweep/
 
 ### ✅ Phase 0: Foundation
 - [x] **#45** - Repository restructuring for bash and .NET coexistence
-- [ ] **#46** - Create marketing website with Astro Starlight
+- [x] **#46** - Create marketing website with Astro Starlight
 
-### 🚧 Phase 1: Foundation (Parallel)
-- [ ] **#25** - Initialize .NET 10 solution with hexagonal folder structure
-- [ ] **#26** - Implement domain value objects and enums
-- [ ] **#27** - Implement domain entities and services
+### ✅ Phase 1: Foundation (Completed)
+- [x] **#25** - Initialize .NET 10 solution with hexagonal folder structure
+- [x] **#26** - Implement domain value objects and enums
+- [x] **#27** - Implement domain entities and services
 
 ### ⏳ Phase 2: Application Layer
 *Depends on Phase 1*
