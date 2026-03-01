@@ -4,11 +4,24 @@
   "tools": {
     "dotnet-format": {
       "version": "5.1.250801",
-      "commands": ["dotnet-format"]
+      "commands": [
+        "dotnet-format"
+      ],
+      "rollForward": false
     },
     "dotnet-reportgenerator-globaltool": {
       "version": "5.4.2",
-      "commands": ["reportgenerator"]
+      "commands": [
+        "reportgenerator"
+      ],
+      "rollForward": false
+    },
+    "slopwatch.cmd": {
+      "version": "0.3.4",
+      "commands": [
+        "slopwatch"
+      ],
+      "rollForward": false
     }
   }
 }
