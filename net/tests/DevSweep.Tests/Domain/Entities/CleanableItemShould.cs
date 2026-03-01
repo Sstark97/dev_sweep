@@ -1,6 +1,7 @@
 using DevSweep.Domain.Entities;
 using DevSweep.Domain.Enums;
 using DevSweep.Domain.ValueObjects;
+using DevSweep.Tests.Builders;
 
 namespace DevSweep.Tests.Domain.Entities;
 
@@ -9,16 +10,11 @@ public class CleanableItemShould
     [Fact]
     public void CreateSafeItemWithReason()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-        pathResult.IsSuccess.Should().BeTrue();
-        sizeResult.IsSuccess.Should().BeTrue();
-
-        var safeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Project dependencies");
+        var safeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .WithReason("Project dependencies")
+            .Build();
 
         safeItem.IsSafeToDelete.Should().BeTrue();
         safeItem.Reason.Should().Be("Project dependencies");
@@ -27,14 +23,11 @@ public class CleanableItemShould
     [Fact]
     public void CreateUnsafeItemWithReason()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-
-        var unsafeItem = CleanableItem.CreateUnsafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Currently in use");
+        var unsafeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Unsafe()
+            .WithReason("Currently in use")
+            .Build();
 
         unsafeItem.IsSafeToDelete.Should().BeFalse();
         unsafeItem.Reason.Should().Be("Currently in use");
@@ -43,14 +36,11 @@ public class CleanableItemShould
     [Fact]
     public void FailToMarkForDeletionWhenNotSafe()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-
-        var unsafeItem = CleanableItem.CreateUnsafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Currently in use");
+        var unsafeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Unsafe()
+            .WithReason("Currently in use")
+            .Build();
 
         var result = unsafeItem.MarkForDeletion();
 
@@ -61,14 +51,11 @@ public class CleanableItemShould
     [Fact]
     public void SucceedToMarkForDeletionWhenSafe()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-
-        var safeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Project dependencies");
+        var safeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .WithReason("Project dependencies")
+            .Build();
 
         var result = safeItem.MarkForDeletion();
 
@@ -78,14 +65,11 @@ public class CleanableItemShould
     [Fact]
     public void FailToMarkAsUnsafeWhenAlreadyUnsafe()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-
-        var unsafeItem = CleanableItem.CreateUnsafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Currently in use");
+        var unsafeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Unsafe()
+            .WithReason("Currently in use")
+            .Build();
 
         var result = unsafeItem.MarkAsUnsafe("Another reason");
 
@@ -96,19 +80,16 @@ public class CleanableItemShould
     [Fact]
     public void SucceedToMarkAsUnsafeWhenSafe()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-
-        var safeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Project dependencies");
+        var safeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .WithReason("Project dependencies")
+            .Build();
 
         var result = safeItem.MarkAsUnsafe("Found in active container");
-
-        result.IsSuccess.Should().BeTrue();
         var updatedItem = result.Value;
+        
+        result.IsSuccess.Should().BeTrue();
         updatedItem.IsSafeToDelete.Should().BeFalse();
         updatedItem.Reason.Should().Be("Found in active container");
     }
@@ -116,14 +97,11 @@ public class CleanableItemShould
     [Fact]
     public void FailToMarkAsSafeWhenAlreadySafe()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-
-        var safeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Project dependencies");
+        var safeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .WithReason("Project dependencies")
+            .Build();
 
         var result = safeItem.MarkAsSafe("Another reason");
 
@@ -134,19 +112,16 @@ public class CleanableItemShould
     [Fact]
     public void SucceedToMarkAsSafeWhenUnsafe()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-
-        var unsafeItem = CleanableItem.CreateUnsafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Currently in use");
+        var unsafeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Unsafe()
+            .WithReason("Currently in use")
+            .Build();
 
         var result = unsafeItem.MarkAsSafe("Container stopped");
-
-        result.IsSuccess.Should().BeTrue();
         var updatedItem = result.Value;
+        
+        result.IsSuccess.Should().BeTrue();
         updatedItem.IsSafeToDelete.Should().BeTrue();
         updatedItem.Reason.Should().Be("Container stopped");
     }
@@ -154,50 +129,39 @@ public class CleanableItemShould
     [Fact]
     public void PreservePathWhenMarkingAsSafe()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-        var originalPath = pathResult.Value;
-
-        var unsafeItem = CleanableItem.CreateUnsafe(
-            originalPath,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Currently in use");
+        var unsafeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Unsafe()
+            .Build();
+        var expectedPath = unsafeItem.Path;
 
         var result = unsafeItem.MarkAsSafe("Container stopped");
 
-        result.Value.Path.Should().Be(originalPath);
+        result.Value.Path.Should().Be(expectedPath);
     }
 
     [Fact]
     public void PreserveSizeWhenMarkingAsUnsafe()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-        var originalSize = sizeResult.Value;
-
-        var safeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            originalSize,
-            CleanupModuleName.Docker,
-            "Project dependencies");
+        var safeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .Build();
+        var expectedSize = safeItem.Size;
 
         var result = safeItem.MarkAsUnsafe("Found in active container");
 
-        result.Value.Size.Should().Be(originalSize);
+        result.Value.Size.Should().Be(expectedSize);
     }
 
     [Fact]
     public void PreserveModuleTypeWhenChangingSafety()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-
-        var safeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Projects,
-            "Project dependencies");
+        var safeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Projects)
+            .Safe()
+            .WithReason("Project dependencies")
+            .Build();
 
         var result = safeItem.MarkAsUnsafe("Found in active project");
 
