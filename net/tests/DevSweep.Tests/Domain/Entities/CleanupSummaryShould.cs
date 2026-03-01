@@ -1,6 +1,7 @@
 using DevSweep.Domain.Entities;
 using DevSweep.Domain.Enums;
 using DevSweep.Domain.ValueObjects;
+using DevSweep.Tests.Builders;
 
 namespace DevSweep.Tests.Domain.Entities;
 
@@ -10,13 +11,11 @@ public class CleanupSummaryShould
     public void FailWhenItemsListIsEmpty()
     {
         var emptyItems = new List<CleanableItem>();
-        var sizeResult = FileSize.Create(0);
-        var cleanupResult = CleanupResult.Create(0, sizeResult.Value);
 
         var result = CleanupSummary.Create(
             CleanupModuleName.Docker,
             emptyItems,
-            cleanupResult.Value);
+            new CleanupResultBuilder().Empty().Build());
 
         result.IsFailure.Should().BeTrue();
         result.Error.IsInvalidOperationError().Should().BeTrue();
@@ -25,20 +24,17 @@ public class CleanupSummaryShould
     [Fact]
     public void SucceedWithValidItems()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-        var safeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Project dependencies");
+        var safeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .WithReason("Project dependencies")
+            .Build();
         var items = new List<CleanableItem> { safeItem };
-        var cleanupResult = CleanupResult.Create(1, sizeResult.Value);
 
         var result = CleanupSummary.Create(
             CleanupModuleName.Docker,
             items,
-            cleanupResult.Value);
+            new CleanupResultBuilder().WithFilesDeleted(1).Build());
 
         result.IsSuccess.Should().BeTrue();
     }
@@ -46,30 +42,28 @@ public class CleanupSummaryShould
     [Fact]
     public void CountTotalItemsScanned()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-        var firstItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Project dependencies");
-        var secondItem = CleanableItem.CreateUnsafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Currently in use");
-        var thirdItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Old cache");
+        var firstItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .WithReason("Project dependencies")
+            .Build();
+        var secondItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Unsafe()
+            .WithReason("Currently in use")
+            .Build();
+        var thirdItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .WithReason("Old cache")
+            .Build();
         var items = new List<CleanableItem> { firstItem, secondItem, thirdItem };
-        var cleanupResult = CleanupResult.Create(2, sizeResult.Value);
+        var cleanupResult = new CleanupResultBuilder().WithFilesDeleted(2).Build();
 
         var result = CleanupSummary.Create(
             CleanupModuleName.Docker,
             items,
-            cleanupResult.Value);
+            cleanupResult);
 
         var summary = result.Value;
         summary.TotalItemsScanned.Should().Be(3);
@@ -78,30 +72,28 @@ public class CleanupSummaryShould
     [Fact]
     public void CountOnlySafeItems()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-        var safeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Project dependencies");
-        var unsafeItem = CleanableItem.CreateUnsafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Currently in use");
-        var anotherSafeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Old cache");
+        var safeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .WithReason("Project dependencies")
+            .Build();
+        var unsafeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Unsafe()
+            .WithReason("Currently in use")
+            .Build();
+        var anotherSafeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .WithReason("Old cache")
+            .Build();
         var items = new List<CleanableItem> { safeItem, unsafeItem, anotherSafeItem };
-        var cleanupResult = CleanupResult.Create(2, sizeResult.Value);
+        var cleanupResult = new CleanupResultBuilder().WithFilesDeleted(2).Build();
 
         var result = CleanupSummary.Create(
             CleanupModuleName.Docker,
             items,
-            cleanupResult.Value);
+            cleanupResult);
 
         var summary = result.Value;
         summary.SafeItemsFound.Should().Be(2);
@@ -110,25 +102,23 @@ public class CleanupSummaryShould
     [Fact]
     public void CountZeroSafeItemsWhenAllUnsafe()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-        var firstUnsafeItem = CleanableItem.CreateUnsafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Currently in use");
-        var secondUnsafeItem = CleanableItem.CreateUnsafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "System dependency");
+        var firstUnsafeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Unsafe()
+            .WithReason("Currently in use")
+            .Build();
+        var secondUnsafeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Unsafe()
+            .WithReason("System dependency")
+            .Build();
         var items = new List<CleanableItem> { firstUnsafeItem, secondUnsafeItem };
-        var cleanupResult = CleanupResult.Create(0, sizeResult.Value);
+        var cleanupResult = new CleanupResultBuilder().Empty().Build();
 
         var result = CleanupSummary.Create(
             CleanupModuleName.Docker,
             items,
-            cleanupResult.Value);
+            cleanupResult);
 
         var summary = result.Value;
         summary.SafeItemsFound.Should().Be(0);
@@ -137,15 +127,13 @@ public class CleanupSummaryShould
     [Fact]
     public void PreserveCleanupResult()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-        var safeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Docker,
-            "Project dependencies");
+        var safeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Docker)
+            .Safe()
+            .WithReason("Project dependencies")
+            .Build();
         var items = new List<CleanableItem> { safeItem };
-        var originalCleanupResult = CleanupResult.Create(1, sizeResult.Value).Value;
+        var originalCleanupResult = new CleanupResultBuilder().WithFilesDeleted(1).Build();
 
         var result = CleanupSummary.Create(
             CleanupModuleName.Docker,
@@ -159,22 +147,32 @@ public class CleanupSummaryShould
     [Fact]
     public void PreserveModuleName()
     {
-        var pathResult = FilePath.Create("/test/file.txt");
-        var sizeResult = FileSize.Create(1024);
-        var safeItem = CleanableItem.CreateSafe(
-            pathResult.Value,
-            sizeResult.Value,
-            CleanupModuleName.Projects,
-            "Project dependencies");
+        var safeItem = new CleanableItemBuilder()
+            .ForModule(CleanupModuleName.Projects)
+            .Safe()
+            .WithReason("Project dependencies")
+            .Build();
         var items = new List<CleanableItem> { safeItem };
-        var cleanupResult = CleanupResult.Create(1, sizeResult.Value);
+        var cleanupResult = new CleanupResultBuilder().WithFilesDeleted(1).Build();
 
         var result = CleanupSummary.Create(
             CleanupModuleName.Projects,
             items,
-            cleanupResult.Value);
+            cleanupResult);
 
         var summary = result.Value;
         summary.Module.Should().Be(CleanupModuleName.Projects);
+    }
+
+    [Fact]
+    public void FailWhenItemsIsNull()
+    {
+        var result = CleanupSummary.Create(
+            CleanupModuleName.Docker,
+            null,
+            new CleanupResultBuilder().Empty().Build());
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.IsValidationError().Should().BeTrue();
     }
 }
