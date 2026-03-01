@@ -5,14 +5,6 @@ namespace DevSweep.Tests.Domain.Common;
 public class ResultFailureTests
 {
     [Fact]
-    public void CreatesFailureResultWithError()
-    {
-        var result = Result<int, string>.Failure("error");
-
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
     public void IsFailureReturnsTrueForFailureResult()
     {
         var result = Result<int, string>.Failure("error");

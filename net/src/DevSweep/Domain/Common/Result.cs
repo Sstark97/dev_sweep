@@ -4,30 +4,30 @@ public readonly record struct Result<TValue, TError>
 {
     private readonly TValue? value;
     private readonly TError? error;
-    private readonly bool isSuccess;
 
     private Result(TValue value)
     {
         this.value = value;
         error = default;
-        isSuccess = true;
+        IsSuccess = true;
     }
 
     private Result(TError error)
     {
         value = default;
         this.error = error;
-        isSuccess = false;
+        IsSuccess = false;
     }
 
-    public bool IsSuccess => isSuccess;
-    public bool IsFailure => !isSuccess;
+    public bool IsSuccess { get; }
 
-    public TValue Value => isSuccess
+    public bool IsFailure => !IsSuccess;
+
+    public TValue Value => IsSuccess
         ? value!
         : throw new InvalidOperationException("Cannot access Value of failed result");
 
-    public TError Error => !isSuccess
+    public TError Error => !IsSuccess
         ? error!
         : throw new InvalidOperationException("Cannot access Error of successful result");
 
@@ -37,7 +37,7 @@ public readonly record struct Result<TValue, TError>
     public Result<TOut, TError> Map<TOut>(Func<TValue, TOut> mapper)
     {
         ArgumentNullException.ThrowIfNull(mapper);
-        return isSuccess
+        return IsSuccess
             ? Result<TOut, TError>.Success(mapper(value!))
             : Result<TOut, TError>.Failure(error!);
     }
@@ -45,7 +45,7 @@ public readonly record struct Result<TValue, TError>
     public Result<TOut, TError> Bind<TOut>(Func<TValue, Result<TOut, TError>> binder)
     {
         ArgumentNullException.ThrowIfNull(binder);
-        return isSuccess
+        return IsSuccess
             ? binder(value!)
             : Result<TOut, TError>.Failure(error!);
     }
@@ -56,6 +56,6 @@ public readonly record struct Result<TValue, TError>
     {
         ArgumentNullException.ThrowIfNull(onSuccess);
         ArgumentNullException.ThrowIfNull(onFailure);
-        return isSuccess ? onSuccess(value!) : onFailure(error!);
+        return IsSuccess ? onSuccess(value!) : onFailure(error!);
     }
 }

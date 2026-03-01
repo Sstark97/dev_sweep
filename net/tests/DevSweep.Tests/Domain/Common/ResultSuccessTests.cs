@@ -5,14 +5,6 @@ namespace DevSweep.Tests.Domain.Common;
 public class ResultSuccessTests
 {
     [Fact]
-    public void CreatesSuccessResultWithValue()
-    {
-        var result = Result<int, string>.Success(42);
-
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
     public void IsSuccessReturnsTrueForSuccessResult()
     {
         var result = Result<int, string>.Success(42);
