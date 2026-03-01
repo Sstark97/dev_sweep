@@ -90,3 +90,11 @@ packages/
 
 ## Benchmark results
 BenchmarkDotNet.Artifacts/
+
+# Claude
+.claude/settings.local.json
+.claude/workspace/
+.claude/agents/
+.claude/backups/
+.claude/commands/
+.claude/settings.json
