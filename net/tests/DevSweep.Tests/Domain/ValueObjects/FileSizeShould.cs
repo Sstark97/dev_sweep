@@ -14,18 +14,12 @@ public class FileSizeShould
         result.Error.MessageContains("negative").Should().BeTrue();
     }
 
-    [Fact]
-    public void SucceedWhenBytesAreZero()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1024)]
+    public void SucceedWhenBytesAreNonNegative(long bytes)
     {
-        var result = FileSize.Create(0);
-
-        result.IsSuccess.Should().BeTrue();
-    }
-
-    [Fact]
-    public void SucceedWhenBytesArePositive()
-    {
-        var result = FileSize.Create(1024);
+        var result = FileSize.Create(bytes);
 
         result.IsSuccess.Should().BeTrue();
     }
@@ -34,90 +28,60 @@ public class FileSizeShould
     public void ConvertBytesToKilobytes()
     {
         var result = FileSize.Create(2048);
+        var fileSize = result.Value;
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.InKilobytes().Should().Be(2m);
+        fileSize.InKilobytes().Should().Be(2m);
     }
 
     [Fact]
     public void ConvertBytesToMegabytes()
     {
         var result = FileSize.Create(1048576);
+        var fileSize = result.Value;
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.InMegabytes().Should().Be(1m);
+        fileSize.InMegabytes().Should().Be(1m);
     }
 
     [Fact]
     public void ConvertBytesToGigabytes()
     {
         var result = FileSize.Create(1073741824);
+        var fileSize = result.Value;
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.InGigabytes().Should().Be(1m);
+        fileSize.InGigabytes().Should().Be(1m);
     }
 
     [Fact]
     public void AddTwoSizes()
     {
-        var aSize = FileSize.Create(1024);
-        var anotherSize = FileSize.Create(2048);
+        var smallSize = FileSize.Create(1024).Value;
+        var largeSize = FileSize.Create(2048).Value;
 
-        aSize.IsSuccess.Should().BeTrue();
-        anotherSize.IsSuccess.Should().BeTrue();
-
-        var sum = aSize.Value.Add(anotherSize.Value);
+        var sum = smallSize.Add(largeSize);
 
         sum.InKilobytes().Should().Be(3m);
     }
 
-    [Fact]
-    public void FormatBytesWithoutDecimals()
+    [Theory]
+    [InlineData(512, "512 B")]
+    [InlineData(2048, "2.00 KB")]
+    [InlineData(2097152, "2.00 MB")]
+    [InlineData(2147483648, "2.00 GB")]
+    public void FormatWithAppropriateSuffix(long bytes, string expected)
     {
-        var result = FileSize.Create(512);
+        var fileSize = FileSize.Create(bytes).Value;
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.ToString().Should().Be("512 B");
-    }
-
-    [Fact]
-    public void FormatKilobytesWithTwoDecimals()
-    {
-        var result = FileSize.Create(2048);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value.ToString().Should().Be("2.00 KB");
-    }
-
-    [Fact]
-    public void FormatMegabytesWithTwoDecimals()
-    {
-        var result = FileSize.Create(2097152);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value.ToString().Should().Be("2.00 MB");
-    }
-
-    [Fact]
-    public void FormatGigabytesWithTwoDecimals()
-    {
-        var result = FileSize.Create(2147483648);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value.ToString().Should().Be("2.00 GB");
+        fileSize.ToString().Should().Be(expected);
     }
 
     [Fact]
     public void IndicateSmallerSizeIsLess()
     {
-        var smallerSize = FileSize.Create(1024);
-        var largerSize = FileSize.Create(2048);
-
-        smallerSize.IsSuccess.Should().BeTrue();
-        largerSize.IsSuccess.Should().BeTrue();
-
-        var small = smallerSize.Value;
-        var large = largerSize.Value;
+        var small = FileSize.Create(1024).Value;
+        var large = FileSize.Create(2048).Value;
 
         large.Should().BeGreaterThan(small);
         small.Should().BeLessThan(large);
@@ -126,14 +90,8 @@ public class FileSizeShould
     [Fact]
     public void CompareUsingCompareTo()
     {
-        var smallerSize = FileSize.Create(1024);
-        var largerSize = FileSize.Create(2048);
-
-        smallerSize.IsSuccess.Should().BeTrue();
-        largerSize.IsSuccess.Should().BeTrue();
-
-        var small = smallerSize.Value;
-        var large = largerSize.Value;
+        var small = FileSize.Create(1024).Value;
+        var large = FileSize.Create(2048).Value;
 
         small.CompareTo(large).Should().BeNegative();
         large.CompareTo(small).Should().BePositive();

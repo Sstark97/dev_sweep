@@ -1,4 +1,3 @@
-using DevSweep.Domain.Common;
 using DevSweep.Domain.ValueObjects;
 
 namespace DevSweep.Tests.Domain.ValueObjects;
@@ -12,29 +11,18 @@ public class CleanupResultShould
 
         var result = CleanupResult.Create(-1, zeroSize);
 
-        Assert.True(result.IsFailure);
-        Assert.True(result.Error.MessageContains("negative"));
+        result.IsFailure.Should().BeTrue();
+        result.Error.MessageContains("negative").Should().BeTrue();
     }
 
-    [Fact]
-    public void SucceedWhenFilesDeletedIsZero()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(5)]
+    public void SucceedWhenFilesDeletedIsNonNegative(int filesDeleted)
     {
-        var sizeResult = FileSize.Create(0);
-        sizeResult.IsSuccess.Should().BeTrue();
+        var validSize = FileSize.Create(1024).Value;
 
-        var result = CleanupResult.Create(0, sizeResult.Value);
-
-        result.IsSuccess.Should().BeTrue();
-    }
-
-    [Fact]
-    public void SucceedWithValidParameters()
-    {
-        var validFileCount = 5;
-        var sizeResult = FileSize.Create(1024);
-        sizeResult.IsSuccess.Should().BeTrue();
-
-        var result = CleanupResult.Create(validFileCount, sizeResult.Value);
+        var result = CleanupResult.Create(filesDeleted, validSize);
 
         result.IsSuccess.Should().BeTrue();
     }
@@ -42,27 +30,25 @@ public class CleanupResultShould
     [Fact]
     public void IndicateWhenErrorsExist()
     {
-        var sizeResult = FileSize.Create(0);
-        sizeResult.IsSuccess.Should().BeTrue();
+        var zeroSize = FileSize.Create(0).Value;
         var errorMessages = new List<string> { "Failed to delete file" };
 
-        var result = CleanupResult.CreateWithErrors(0, sizeResult.Value, errorMessages);
-        result.IsSuccess.Should().BeTrue();
-
+        var result = CleanupResult.CreateWithErrors(0, zeroSize, errorMessages);
         var cleanupResult = result.Value;
+
+        result.IsSuccess.Should().BeTrue();
         cleanupResult.HasErrors().Should().BeTrue();
     }
 
     [Fact]
     public void IndicateWhenNoErrorsExist()
     {
-        var sizeResult = FileSize.Create(0);
-        sizeResult.IsSuccess.Should().BeTrue();
+        var zeroSize = FileSize.Create(0).Value;
 
-        var result = CleanupResult.Create(0, sizeResult.Value);
-        result.IsSuccess.Should().BeTrue();
-
+        var result = CleanupResult.Create(0, zeroSize);
         var cleanupResult = result.Value;
+
+        result.IsSuccess.Should().BeTrue();
         cleanupResult.HasErrors().Should().BeFalse();
     }
 
@@ -102,10 +88,10 @@ public class CleanupResultShould
         var expectedErrors = new List<string> { firstError, secondError };
 
         var result = CleanupResult.CreateWithErrors(0, zeroSize, expectedErrors);
-        result.IsSuccess.Should().BeTrue();
-
         var cleanupResult = result.Value;
         var actualErrors = cleanupResult.ErrorMessages();
+
+        result.IsSuccess.Should().BeTrue();
         actualErrors.Count.Should().Be(2);
         actualErrors.Should().Contain(firstError);
         actualErrors.Should().Contain(secondError);
@@ -121,8 +107,8 @@ public class CleanupResultShould
 
         var combined = firstResult.Combine(secondResult);
 
-        Assert.Equal(8, combined.TotalFilesDeleted());
-        Assert.Equal(smallSize.Add(largeSize), combined.TotalSpaceFreed());
+        combined.TotalFilesDeleted().Should().Be(8);
+        combined.TotalSpaceFreed().Should().Be(smallSize.Add(largeSize));
     }
 
     [Fact]
@@ -143,11 +129,8 @@ public class CleanupResultShould
             select result
         ).Aggregate((accumulator, current) => accumulator.Combine(current));
 
-        Assert.Equal(9, aggregated.TotalFilesDeleted());
-        Assert.Equal(
-            smallSize.Add(mediumSize).Add(largeSize),
-            aggregated.TotalSpaceFreed()
-        );
+        aggregated.TotalFilesDeleted().Should().Be(9);
+        aggregated.TotalSpaceFreed().Should().Be(smallSize.Add(mediumSize).Add(largeSize));
     }
 
     [Fact]

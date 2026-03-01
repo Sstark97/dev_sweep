@@ -34,57 +34,54 @@ public class FilePathCreationShould
         var result = FilePath.Create("/valid/path/file.txt");
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.ToString().Should().Be("/valid/path/file.txt");
     }
 
     [Fact]
     public void PreserveOriginalPathValue()
     {
-        var originalPath = "/Users/test/documents/file.pdf";
+        var originalPath = "/documents/report.pdf";
         var result = FilePath.Create(originalPath);
+        var filePath = result.Value;
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.ToString().Should().Be(originalPath);
+        filePath.ToString().Should().Be(originalPath);
     }
 
     [Fact]
     public void ExtractFileNameCorrectly()
     {
         var result = FilePath.Create("/path/to/file.txt");
+        var filePath = result.Value;
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.FileName().Should().Be("file.txt");
+        filePath.FileName().Should().Be("file.txt");
     }
 
     [Fact]
     public void ExtractDirectoryPathCorrectly()
     {
         var result = FilePath.Create("/path/to/file.txt");
+        var filePath = result.Value;
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.DirectoryPath().Should().Be("/path/to");
+        filePath.DirectoryPath().Should().Be("/path/to");
     }
 
     [Fact]
     public void ExtractExtensionCorrectly()
     {
         var result = FilePath.Create("/path/to/file.txt");
+        var filePath = result.Value;
 
         result.IsSuccess.Should().BeTrue();
-        result.Value.Extension().Should().Be(".txt");
+        filePath.Extension().Should().Be(".txt");
     }
 
     [Fact]
     public void SupportValueEqualitySemantics()
     {
-        var aPath = FilePath.Create("/path/to/file.txt");
-        var anotherPath = FilePath.Create("/path/to/file.txt");
-
-        aPath.IsSuccess.Should().BeTrue();
-        anotherPath.IsSuccess.Should().BeTrue();
-
-        var firstValue = aPath.Value;
-        var secondValue = anotherPath.Value;
+        var firstValue = FilePath.Create("/path/to/file.txt").Value;
+        var secondValue = FilePath.Create("/path/to/file.txt").Value;
 
         firstValue.Should().Be(secondValue);
         (firstValue == secondValue).Should().BeTrue();
