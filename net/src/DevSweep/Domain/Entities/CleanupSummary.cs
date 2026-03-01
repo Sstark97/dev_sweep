@@ -13,10 +13,12 @@ public record CleanupSummary(
 {
     public static Result<CleanupSummary, DomainError> Create(
         CleanupModuleName module,
-        IReadOnlyList<CleanableItem> items,
+        IReadOnlyList<CleanableItem>? items,
         CleanupResult result)
     {
-        ArgumentNullException.ThrowIfNull(items);
+        if (items is null)
+            return Result<CleanupSummary, DomainError>.Failure(
+                DomainError.Validation("items is required"));
 
         if (items.Count == 0)
             return Result<CleanupSummary, DomainError>.Failure(
