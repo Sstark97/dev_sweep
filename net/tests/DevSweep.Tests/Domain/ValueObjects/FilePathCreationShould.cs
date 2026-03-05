@@ -60,11 +60,13 @@ public class FilePathCreationShould
     [Fact]
     public void ExtractDirectoryPathCorrectly()
     {
-        var result = FilePath.Create("/path/to/file.txt");
+        var path = Path.Combine("path", "to", "file.txt");
+        var result = FilePath.Create(path);
         var filePath = result.Value;
 
         result.IsSuccess.Should().BeTrue();
-        filePath.DirectoryPath().Should().Be("/path/to");
+        var expectedDirectoryPath = Path.Combine("path", "to");
+        filePath.DirectoryPath().Should().Be(expectedDirectoryPath);
     }
 
     [Fact]
