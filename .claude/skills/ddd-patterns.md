@@ -132,3 +132,61 @@ public static CleanableItem CreateUnsafe(
     FilePath path, FileSize size, CleanupModuleName moduleType, string reason) =>
     new(path, size, moduleType, isSafe: false, reason);
 ```
+
+---
+
+# Use Cases
+
+**`sealed class` with primary constructor and private helper methods**
+
+## Rules
+- Type: `sealed class` (not record, not struct)
+- Dependencies injected via C# primary constructor
+- Implements a driving port interface (e.g., `IAnalyzeUseCase`)
+- Public method is always named `Invoke` (see naming.md)
+- Long `Invoke()` methods MUST be broken into private helpers
+- Each private helper has one responsibility and a semantic name
+- Async helpers return `Task<Result<T, DomainError>>`
+- Sync helpers return `Result<T, DomainError>`
+- `Invoke()` should read like a high-level story (guard -> process -> output -> return)
+
+## Template
+
+```csharp
+public sealed class MyUseCase(
+    SomeDependency dependency,
+    IOutputFormatter outputFormatter
+) : IMyUseCase
+{
+    public async Task<Result<MyResult, DomainError>> Invoke(
+        MyInput input,
+        CancellationToken cancellationToken)
+    {
+        if (input is null)
+            return Result<MyResult, DomainError>.Failure(
+                DomainError.Validation("input is required"));
+
+        var processedResult = await ProcessAsync(input, cancellationToken);
+        if (processedResult.IsFailure)
+            return Result<MyResult, DomainError>.Failure(processedResult.Error);
+
+        outputFormatter.DisplayResult(processedResult.Value);
+
+        return Result<MyResult, DomainError>.Success(processedResult.Value);
+    }
+
+    private async Task<Result<MyResult, DomainError>> ProcessAsync(
+        MyInput input, CancellationToken cancellationToken)
+    {
+        // Single-responsibility helper logic
+    }
+}
+```
+
+## Private Method Naming Guide
+
+| Responsibility | Name Pattern | Return Type |
+|----------------|-------------|-------------|
+| Resolve/lookup from registry | `ResolveModules` | `Result<List<T>, DomainError>` |
+| Iterate + call async operations | `AnalyzeModulesAsync`, `CleanModulesAsync` | `Task<Result<List<T>, DomainError>>` |
+| User confirmation check | `UserConfirmedAsync` | `Task<bool>` |
