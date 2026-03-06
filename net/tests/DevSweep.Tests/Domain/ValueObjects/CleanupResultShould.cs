@@ -1,12 +1,11 @@
 using AwesomeAssertions;
 using DevSweep.Domain.ValueObjects;
-using Xunit;
 
 namespace DevSweep.Tests.Domain.ValueObjects;
 
-public class CleanupResultShould
+internal sealed class CleanupResultShould
 {
-    [Fact]
+    [Test]
     public void FailWhenFilesDeletedIsNegative()
     {
         var zeroSize = FileSize.Create(0).Value;
@@ -17,9 +16,9 @@ public class CleanupResultShould
         result.Error.MessageContains("negative").Should().BeTrue();
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(5)]
+    [Test]
+    [Arguments(0)]
+    [Arguments(5)]
     public void SucceedWhenFilesDeletedIsNonNegative(int filesDeleted)
     {
         var validSize = FileSize.Create(1024).Value;
@@ -29,7 +28,7 @@ public class CleanupResultShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void IndicateWhenErrorsExist()
     {
         var zeroSize = FileSize.Create(0).Value;
@@ -42,7 +41,7 @@ public class CleanupResultShould
         cleanupResult.HasErrors().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void IndicateWhenNoErrorsExist()
     {
         var zeroSize = FileSize.Create(0).Value;
@@ -54,7 +53,7 @@ public class CleanupResultShould
         cleanupResult.HasErrors().Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void ProvideTotalFilesDeleted()
     {
         var expectedFileCount = 10;
@@ -68,7 +67,7 @@ public class CleanupResultShould
         combined.TotalFilesDeleted().Should().Be(expectedFileCount + 5);
     }
 
-    [Fact]
+    [Test]
     public void ProvideTotalSpaceFreed()
     {
         var smallSize = FileSize.Create(1024).Value;
@@ -81,7 +80,7 @@ public class CleanupResultShould
         combined.TotalSpaceFreed().Should().Be(smallSize.Add(largeSize));
     }
 
-    [Fact]
+    [Test]
     public void ProvideErrorMessages()
     {
         var zeroSize = FileSize.Create(0).Value;
@@ -99,7 +98,7 @@ public class CleanupResultShould
         actualErrors.Should().Contain(secondError);
     }
 
-    [Fact]
+    [Test]
     public void CombineTwoResults()
     {
         var smallSize = FileSize.Create(1024).Value;
@@ -113,7 +112,7 @@ public class CleanupResultShould
         combined.TotalSpaceFreed().Should().Be(smallSize.Add(largeSize));
     }
 
-    [Fact]
+    [Test]
     public void AggregateMultipleResultsUsingLinq()
     {
         var smallSize = FileSize.Create(1024).Value;
@@ -135,7 +134,7 @@ public class CleanupResultShould
         aggregated.TotalSpaceFreed().Should().Be(smallSize.Add(mediumSize).Add(largeSize));
     }
 
-    [Fact]
+    [Test]
     public void CombineResultsWithErrors()
     {
         var zeroSize = FileSize.Create(0).Value;

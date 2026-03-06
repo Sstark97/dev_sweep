@@ -1,12 +1,11 @@
 using AwesomeAssertions;
 using DevSweep.Domain.ValueObjects;
-using Xunit;
 
 namespace DevSweep.Tests.Domain.ValueObjects;
 
-public class FileSizeShould
+internal sealed class FileSizeShould
 {
-    [Fact]
+    [Test]
     public void FailWhenBytesAreNegative()
     {
         var result = FileSize.Create(-1);
@@ -16,9 +15,9 @@ public class FileSizeShould
         result.Error.MessageContains("negative").Should().BeTrue();
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(1024)]
+    [Test]
+    [Arguments(0)]
+    [Arguments(1024)]
     public void SucceedWhenBytesAreNonNegative(long bytes)
     {
         var result = FileSize.Create(bytes);
@@ -26,7 +25,7 @@ public class FileSizeShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ConvertBytesToKilobytes()
     {
         var result = FileSize.Create(2048);
@@ -36,7 +35,7 @@ public class FileSizeShould
         fileSize.InKilobytes().Should().Be(2m);
     }
 
-    [Fact]
+    [Test]
     public void ConvertBytesToMegabytes()
     {
         var result = FileSize.Create(1048576);
@@ -46,7 +45,7 @@ public class FileSizeShould
         fileSize.InMegabytes().Should().Be(1m);
     }
 
-    [Fact]
+    [Test]
     public void ConvertBytesToGigabytes()
     {
         var result = FileSize.Create(1073741824);
@@ -56,7 +55,7 @@ public class FileSizeShould
         fileSize.InGigabytes().Should().Be(1m);
     }
 
-    [Fact]
+    [Test]
     public void AddTwoSizes()
     {
         var smallSize = FileSize.Create(1024).Value;
@@ -67,11 +66,11 @@ public class FileSizeShould
         sum.InKilobytes().Should().Be(3m);
     }
 
-    [Theory]
-    [InlineData(512, "512 B")]
-    [InlineData(2048, "2.00 KB")]
-    [InlineData(2097152, "2.00 MB")]
-    [InlineData(2147483648, "2.00 GB")]
+    [Test]
+    [Arguments(512, "512 B")]
+    [Arguments(2048, "2.00 KB")]
+    [Arguments(2097152, "2.00 MB")]
+    [Arguments(2147483648, "2.00 GB")]
     public void FormatWithAppropriateSuffix(long bytes, string expected)
     {
         var fileSize = FileSize.Create(bytes).Value;
@@ -79,7 +78,7 @@ public class FileSizeShould
         fileSize.ToString().Should().Be(expected);
     }
 
-    [Fact]
+    [Test]
     public void IndicateSmallerSizeIsLess()
     {
         var small = FileSize.Create(1024).Value;
@@ -89,7 +88,7 @@ public class FileSizeShould
         small.Should().BeLessThan(large);
     }
 
-    [Fact]
+    [Test]
     public void CompareUsingCompareTo()
     {
         var small = FileSize.Create(1024).Value;

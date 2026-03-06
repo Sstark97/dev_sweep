@@ -1,13 +1,12 @@
 using System.Globalization;
 using AwesomeAssertions;
 using DevSweep.Domain.Common;
-using Xunit;
 
 namespace DevSweep.Tests.Domain.Common;
 
-public class ResultBindTests
+internal sealed class ResultBindTests
 {
-    [Fact]
+    [Test]
     public void ChainsSuccessfulOperations()
     {
         var result = Result<int, string>.Success(5);
@@ -18,7 +17,7 @@ public class ResultBindTests
         bound.Value.Should().Be(10);
     }
 
-    [Fact]
+    [Test]
     public void PropagatesFirstErrorInChain()
     {
         var result = Result<int, string>.Failure("first error");
@@ -29,7 +28,7 @@ public class ResultBindTests
         bound.Error.Should().Be("first error");
     }
 
-    [Fact]
+    [Test]
     public void AllowsNestedBindOperations()
     {
         var result = Result<int, string>.Success(5);

@@ -1,12 +1,11 @@
 using AwesomeAssertions;
 using DevSweep.Domain.Common;
-using Xunit;
 
 namespace DevSweep.Tests.Domain.Common;
 
-public class ResultLinqQuerySyntaxTests
+internal sealed class ResultLinqQuerySyntaxTests
 {
-    [Fact]
+    [Test]
     public void TransformsValueUsingSelectSyntax()
     {
         var result =
@@ -17,7 +16,7 @@ public class ResultLinqQuerySyntaxTests
         result.Value.Should().Be(10);
     }
 
-    [Fact]
+    [Test]
     public void ComposesMultipleOperationsUsingQuerySyntax()
     {
         var result =
@@ -29,7 +28,7 @@ public class ResultLinqQuerySyntaxTests
         result.Value.Should().Be(15);
     }
 
-    [Fact]
+    [Test]
     public void PropagatesFirstErrorInQueryChain()
     {
         var result =
@@ -41,7 +40,7 @@ public class ResultLinqQuerySyntaxTests
         result.Error.Should().Be("first error");
     }
 
-    [Fact]
+    [Test]
     public void AllowsComplexRailwayOrientedComposition()
     {
         var result =

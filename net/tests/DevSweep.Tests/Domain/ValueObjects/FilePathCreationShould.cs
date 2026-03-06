@@ -1,15 +1,14 @@
 using AwesomeAssertions;
 using DevSweep.Domain.ValueObjects;
-using Xunit;
 
 namespace DevSweep.Tests.Domain.ValueObjects;
 
-public class FilePathCreationShould
+internal sealed class FilePathCreationShould
 {
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
+    [Test]
+    [Arguments(null)]
+    [Arguments("")]
+    [Arguments("   ")]
     public void FailWhenPathIsMissingOrEmpty(string? invalidPath)
     {
         var result = FilePath.Create(invalidPath!);
@@ -19,7 +18,7 @@ public class FilePathCreationShould
         result.Error.MessageContains("empty").Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void FailWhenPathExceedsMaximumLength()
     {
         var longPath = new string('a', 261);
@@ -30,7 +29,7 @@ public class FilePathCreationShould
         result.Error.MessageContains("exceeds maximum length").Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void SucceedWhenPathIsValid()
     {
         var path = Path.Combine("valid", "path", "file.txt");
@@ -39,7 +38,7 @@ public class FilePathCreationShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void PreserveOriginalPathValue()
     {
         var originalPath = Path.Combine("documents", "report.pdf");
@@ -50,7 +49,7 @@ public class FilePathCreationShould
         filePath.ToString().Should().Be(originalPath);
     }
 
-    [Fact]
+    [Test]
     public void ExtractFileNameCorrectly()
     {
         var path = Path.Combine("path", "to", "file.txt");
@@ -61,7 +60,7 @@ public class FilePathCreationShould
         filePath.FileName().Should().Be("file.txt");
     }
 
-    [Fact]
+    [Test]
     public void ExtractDirectoryPathCorrectly()
     {
         var path = Path.Combine("path", "to", "file.txt");
@@ -73,7 +72,7 @@ public class FilePathCreationShould
         filePath.DirectoryPath().Should().Be(expectedDirectoryPath);
     }
 
-    [Fact]
+    [Test]
     public void ExtractExtensionCorrectly()
     {
         var path = Path.Combine("path", "to", "file.txt");
@@ -84,7 +83,7 @@ public class FilePathCreationShould
         filePath.Extension().Should().Be(".txt");
     }
 
-    [Fact]
+    [Test]
     public void SupportValueEqualitySemantics()
     {
         var firstValue = FilePath.Create(Path.Combine("path","to", "file.txt")).Value;

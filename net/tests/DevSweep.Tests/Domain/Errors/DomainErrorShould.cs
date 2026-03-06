@@ -1,12 +1,11 @@
 using AwesomeAssertions;
 using DevSweep.Domain.Errors;
-using Xunit;
 
 namespace DevSweep.Tests.Domain.Errors;
 
-public class DomainErrorShould
+internal sealed class DomainErrorShould
 {
-    [Fact]
+    [Test]
     public void CreateValidationError()
     {
         var error = DomainError.Validation("Invalid input");
@@ -15,7 +14,7 @@ public class DomainErrorShould
         error.MessageContains("Invalid input").Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void CreateNotFoundError()
     {
         var error = DomainError.NotFound("User", "123");
@@ -25,7 +24,7 @@ public class DomainErrorShould
         error.MessageContains("123").Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void CreateInvalidOperationError()
     {
         var error = DomainError.InvalidOperation("Cannot perform this action");
@@ -34,7 +33,7 @@ public class DomainErrorShould
         error.MessageContains("Cannot perform").Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void FormatErrorWithCodeAndMessage()
     {
         var error = DomainError.Validation("Test message");

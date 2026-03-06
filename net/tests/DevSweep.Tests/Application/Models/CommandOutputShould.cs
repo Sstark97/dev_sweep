@@ -1,12 +1,11 @@
 using AwesomeAssertions;
 using DevSweep.Application.Models;
-using Xunit;
 
 namespace DevSweep.Tests.Application.Models;
 
-public class CommandOutputShould
+internal sealed class CommandOutputShould
 {
-    [Fact]
+    [Test]
     public void SucceedWithValidParameters()
     {
         var result = CommandOutput.Create(0, "output text", string.Empty);
@@ -14,7 +13,7 @@ public class CommandOutputShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void FailWhenStandardOutputIsNull()
     {
         var result = CommandOutput.Create(0, null!, string.Empty);
@@ -23,7 +22,7 @@ public class CommandOutputShould
         result.Error.MessageContains("standard output").Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void FailWhenStandardErrorIsNull()
     {
         var result = CommandOutput.Create(0, string.Empty, null!);
@@ -32,7 +31,7 @@ public class CommandOutputShould
         result.Error.MessageContains("standard error").Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ReportSuccessfulWhenExitCodeIsZero()
     {
         var outputResult = CommandOutput.Create(0, "done", string.Empty);
@@ -42,7 +41,7 @@ public class CommandOutputShould
         output.IsSuccessful().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ReportUnsuccessfulWhenExitCodeIsNonZero()
     {
         var outputResult = CommandOutput.Create(1, string.Empty, "error occurred");
@@ -52,7 +51,7 @@ public class CommandOutputShould
         output.IsSuccessful().Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void ReportHasOutputWhenStandardOutputIsNotEmpty()
     {
         var outputResult = CommandOutput.Create(0, "some output", string.Empty);
@@ -62,7 +61,7 @@ public class CommandOutputShould
         output.HasOutput().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ReportNoOutputWhenStandardOutputIsEmpty()
     {
         var outputResult = CommandOutput.Create(0, string.Empty, string.Empty);
@@ -72,7 +71,7 @@ public class CommandOutputShould
         output.HasOutput().Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void CreateFailedCommandOutput()
     {
         var result = CommandOutput.CreateFailed("command not found");

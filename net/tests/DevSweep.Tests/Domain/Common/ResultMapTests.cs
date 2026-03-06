@@ -1,13 +1,12 @@
 using System.Globalization;
 using AwesomeAssertions;
 using DevSweep.Domain.Common;
-using Xunit;
 
 namespace DevSweep.Tests.Domain.Common;
 
-public class ResultMapTests
+internal sealed class ResultMapTests
 {
-    [Fact]
+    [Test]
     public void TransformsValueWhenResultIsSuccess()
     {
         var result = Result<int, string>.Success(5);
@@ -18,7 +17,7 @@ public class ResultMapTests
         mapped.Value.Should().Be(10);
     }
 
-    [Fact]
+    [Test]
     public void PropagatesErrorWhenResultIsFailure()
     {
         var result = Result<int, string>.Failure("error");
@@ -29,7 +28,7 @@ public class ResultMapTests
         mapped.Error.Should().Be("error");
     }
 
-    [Fact]
+    [Test]
     public void AllowsChainingMultipleMapOperations()
     {
         var result = Result<int, string>.Success(5);

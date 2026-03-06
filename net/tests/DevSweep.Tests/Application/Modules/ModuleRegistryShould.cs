@@ -1,16 +1,13 @@
 using AwesomeAssertions;
 using DevSweep.Application.Modules;
-using DevSweep.Domain.Common;
 using DevSweep.Domain.Enums;
-using DevSweep.Domain.Errors;
 using NSubstitute;
-using Xunit;
 
 namespace DevSweep.Tests.Application.Modules;
 
-public class ModuleRegistryShould
+internal sealed class ModuleRegistryShould
 {
-    [Fact]
+    [Test]
     public void RegisterModule()
     {
         var registry = new ModuleRegistry();
@@ -25,7 +22,7 @@ public class ModuleRegistryShould
         registeredModule.Should().BeSameAs(dockerModule);
     }
 
-    [Fact]
+    [Test]
     public void FailWhenModuleNotRegistered()
     {
         var registry = new ModuleRegistry();
@@ -36,7 +33,7 @@ public class ModuleRegistryShould
         result.Error.IsNotFoundError().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ReturnAllRegisteredModules()
     {
         var registry = new ModuleRegistry();
@@ -55,7 +52,7 @@ public class ModuleRegistryShould
         modules.Should().Contain(homebrewModule);
     }
 
-    [Fact]
+    [Test]
     public void ReturnEmptyListWhenNoModulesRegistered()
     {
         var registry = new ModuleRegistry();
@@ -65,7 +62,7 @@ public class ModuleRegistryShould
         modules.Should().BeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void OverwriteModuleWithSameName()
     {
         var registry = new ModuleRegistry();
@@ -85,7 +82,7 @@ public class ModuleRegistryShould
         registry.Modules().Should().HaveCount(1);
     }
 
-    [Fact]
+    [Test]
     public void FailWhenRegisteringNullModule()
     {
         var registry = new ModuleRegistry();

@@ -1,13 +1,12 @@
 using AwesomeAssertions;
 using DevSweep.Domain.Enums;
 using DevSweep.Tests.Builders;
-using Xunit;
 
 namespace DevSweep.Tests.Domain.Entities;
 
-public class CleanableItemShould
+internal sealed class CleanableItemShould
 {
-    [Fact]
+    [Test]
     public void CreateSafeItemWithReason()
     {
         var safeItem = new CleanableItemBuilder()
@@ -20,7 +19,7 @@ public class CleanableItemShould
         safeItem.Reason.Should().Be("Project dependencies");
     }
 
-    [Fact]
+    [Test]
     public void CreateUnsafeItemWithReason()
     {
         var unsafeItem = new CleanableItemBuilder()
@@ -33,7 +32,7 @@ public class CleanableItemShould
         unsafeItem.Reason.Should().Be("Currently in use");
     }
 
-    [Fact]
+    [Test]
     public void FailToMarkForDeletionWhenNotSafe()
     {
         var unsafeItem = new CleanableItemBuilder()
@@ -48,7 +47,7 @@ public class CleanableItemShould
         result.Error.IsInvalidOperationError().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void SucceedToMarkForDeletionWhenSafe()
     {
         var safeItem = new CleanableItemBuilder()
@@ -62,7 +61,7 @@ public class CleanableItemShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void FailToMarkAsUnsafeWhenAlreadyUnsafe()
     {
         var unsafeItem = new CleanableItemBuilder()
@@ -77,7 +76,7 @@ public class CleanableItemShould
         result.Error.IsInvalidOperationError().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void SucceedToMarkAsUnsafeWhenSafe()
     {
         var safeItem = new CleanableItemBuilder()
@@ -94,7 +93,7 @@ public class CleanableItemShould
         updatedItem.Reason.Should().Be("Found in active container");
     }
 
-    [Fact]
+    [Test]
     public void FailToMarkAsSafeWhenAlreadySafe()
     {
         var safeItem = new CleanableItemBuilder()
@@ -109,7 +108,7 @@ public class CleanableItemShould
         result.Error.IsInvalidOperationError().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void SucceedToMarkAsSafeWhenUnsafe()
     {
         var unsafeItem = new CleanableItemBuilder()
@@ -126,7 +125,7 @@ public class CleanableItemShould
         updatedItem.Reason.Should().Be("Container stopped");
     }
 
-    [Fact]
+    [Test]
     public void PreservePathWhenMarkingAsSafe()
     {
         var unsafeItem = new CleanableItemBuilder()
@@ -140,7 +139,7 @@ public class CleanableItemShould
         result.Value.Path.Should().Be(expectedPath);
     }
 
-    [Fact]
+    [Test]
     public void PreserveSizeWhenMarkingAsUnsafe()
     {
         var safeItem = new CleanableItemBuilder()
@@ -154,7 +153,7 @@ public class CleanableItemShould
         result.Value.Size.Should().Be(expectedSize);
     }
 
-    [Fact]
+    [Test]
     public void PreserveModuleTypeWhenChangingSafety()
     {
         var safeItem = new CleanableItemBuilder()

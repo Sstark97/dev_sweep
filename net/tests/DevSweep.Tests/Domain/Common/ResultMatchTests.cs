@@ -1,12 +1,11 @@
 using AwesomeAssertions;
 using DevSweep.Domain.Common;
-using Xunit;
 
 namespace DevSweep.Tests.Domain.Common;
 
-public class ResultMatchTests
+internal sealed class ResultMatchTests
 {
-    [Fact]
+    [Test]
     public void ExecutesSuccessFunctionWhenResultIsSuccess()
     {
         var result = Result<int, string>.Success(42);
@@ -19,7 +18,7 @@ public class ResultMatchTests
         wasCalled.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ExecutesFailureFunctionWhenResultIsFailure()
     {
         var result = Result<int, string>.Failure("error");
@@ -32,7 +31,7 @@ public class ResultMatchTests
         wasCalled.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ReturnsCorrectValueFromMatchFunction()
     {
         var successResult = Result<int, string>.Success(42);
