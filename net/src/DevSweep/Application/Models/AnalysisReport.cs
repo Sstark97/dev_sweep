@@ -17,6 +17,15 @@ public sealed record AnalysisReport
             return Result<AnalysisReport, DomainError>.Failure(
                 DomainError.Validation("moduleAnalyses is required"));
 
+        var duplicates = from analysis in moduleAnalyses
+                         group analysis by analysis.Module into g
+                         where g.Count() > 1
+                         select g.Key;
+
+        if (duplicates.Any())
+            return Result<AnalysisReport, DomainError>.Failure(
+                DomainError.Validation("Duplicate module analyses are not allowed"));
+
         return Result<AnalysisReport, DomainError>.Success(
             new AnalysisReport(moduleAnalyses));
     }

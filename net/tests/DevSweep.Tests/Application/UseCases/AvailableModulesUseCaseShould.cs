@@ -1,17 +1,19 @@
+using AwesomeAssertions;
 using DevSweep.Application.Modules;
 using DevSweep.Application.Ports.Driven;
 using DevSweep.Application.UseCases;
 using DevSweep.Domain.Enums;
 using DevSweep.Tests.Application.Builders;
+using NSubstitute;
 
 namespace DevSweep.Tests.Application.UseCases;
 
-public class AvailableModulesUseCaseShould
+internal sealed class AvailableModulesUseCaseShould
 {
     private readonly ModuleRegistry registry = new();
     private readonly IEnvironmentProvider environmentProvider = Substitute.For<IEnvironmentProvider>();
 
-    [Fact]
+    [Test]
     public void ReturnEmptyListWhenNoModulesRegistered()
     {
         environmentProvider.CurrentOperatingSystem.Returns(OperatingSystemType.MacOS);
@@ -22,7 +24,7 @@ public class AvailableModulesUseCaseShould
         descriptors.Should().BeEmpty();
     }
 
-    [Fact]
+    [Test]
     public void ReturnAllModulesAvailableOnCurrentPlatform()
     {
         environmentProvider.CurrentOperatingSystem.Returns(OperatingSystemType.MacOS);
@@ -50,7 +52,7 @@ public class AvailableModulesUseCaseShould
         descriptors.Should().HaveCount(2);
     }
 
-    [Fact]
+    [Test]
     public void ExcludeModulesNotAvailableOnCurrentPlatform()
     {
         environmentProvider.CurrentOperatingSystem.Returns(OperatingSystemType.Linux);
@@ -79,7 +81,7 @@ public class AvailableModulesUseCaseShould
         descriptors[0].Name().Should().Be(CleanupModuleName.Docker);
     }
 
-    [Fact]
+    [Test]
     public void ReturnDescriptorsWithCorrectModuleInfo()
     {
         environmentProvider.CurrentOperatingSystem.Returns(OperatingSystemType.MacOS);
@@ -105,7 +107,7 @@ public class AvailableModulesUseCaseShould
         descriptor.IsDestructive().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void FilterByMacOSPlatform()
     {
         environmentProvider.CurrentOperatingSystem.Returns(OperatingSystemType.MacOS);
