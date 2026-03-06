@@ -1,7 +1,7 @@
-using DevSweep.Domain.Entities;
+using AwesomeAssertions;
 using DevSweep.Domain.Enums;
-using DevSweep.Domain.ValueObjects;
 using DevSweep.Tests.Builders;
+using Xunit;
 
 namespace DevSweep.Tests.Domain.Entities;
 

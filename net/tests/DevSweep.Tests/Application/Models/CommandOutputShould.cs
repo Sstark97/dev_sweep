@@ -1,4 +1,6 @@
+using AwesomeAssertions;
 using DevSweep.Application.Models;
+using Xunit;
 
 namespace DevSweep.Tests.Application.Models;
 

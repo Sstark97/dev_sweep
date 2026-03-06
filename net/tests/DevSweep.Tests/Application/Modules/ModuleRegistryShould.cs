@@ -1,7 +1,10 @@
+using AwesomeAssertions;
 using DevSweep.Application.Modules;
 using DevSweep.Domain.Common;
 using DevSweep.Domain.Enums;
 using DevSweep.Domain.Errors;
+using NSubstitute;
+using Xunit;
 
 namespace DevSweep.Tests.Application.Modules;
 
