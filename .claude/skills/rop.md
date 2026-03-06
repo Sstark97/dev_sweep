@@ -45,3 +45,24 @@ public static FilePath Create(string path)
     return new FilePath(path);
 }
 ```
+
+## LINQ Query Syntax for Collections
+
+When filtering and mapping collections, prefer LINQ query syntax over fluent method chains (`.Where().Select()`). This is consistent with using query syntax for `Result` composition.
+
+```csharp
+// CORRECT - LINQ query syntax for collection pipelines
+return [.. from module in registry.Modules()
+    where module.IsAvailableOnPlatform(currentOs)
+    let descriptor = ModuleDescriptor.Create(module.Name, module.Description, module.IsDestructive)
+    where descriptor.IsSuccess
+    select descriptor.Value];
+
+// WRONG - Fluent method chains
+return registry.Modules()
+    .Where(m => m.IsAvailableOnPlatform(currentOs))
+    .Select(m => ModuleDescriptor.Create(m.Name, m.Description, m.IsDestructive))
+    .Where(r => r.IsSuccess)
+    .Select(r => r.Value)
+    .ToList();
+```

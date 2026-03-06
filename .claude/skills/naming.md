@@ -75,3 +75,39 @@ public readonly record struct FileSize
         left.bytes > right.bytes;
 }
 ```
+
+---
+
+# Use Cases
+
+## Rules -- Method Naming
+- The public entry point of all use cases is named `Invoke` (not `Execute`, `Run`, or `Handle`)
+- Async use cases: `Task<Result<T, DomainError>> Invoke(..., CancellationToken cancellationToken)`
+- Sync use cases: `T Invoke()`
+- This applies to both the interface (port) and the implementation
+
+## Examples
+
+```csharp
+// CORRECT - Invoke is the standard use case method name
+public interface IAnalyzeUseCase
+{
+    Task<Result<AnalysisReport, DomainError>> Invoke(
+        IReadOnlyList<CleanupModuleName> modules,
+        CancellationToken cancellationToken);
+}
+
+public interface IAvailableModulesUseCase
+{
+    IReadOnlyList<ModuleDescriptor> Invoke();
+}
+
+// WRONG - Other names
+public interface IAnalyzeUseCase
+{
+    Task<Result<AnalysisReport, DomainError>> Execute(...);      // WRONG
+    Task<Result<AnalysisReport, DomainError>> ExecuteAsync(...);  // WRONG
+    Task<Result<AnalysisReport, DomainError>> Run(...);           // WRONG
+    Task<Result<AnalysisReport, DomainError>> Handle(...);        // WRONG
+}
+```

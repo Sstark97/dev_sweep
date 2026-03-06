@@ -36,3 +36,20 @@ var dto = entity.ToDto();
 - NO inheritance hierarchies
 - YES composition and interfaces
 - YES records for modeling variants
+
+## No ConfigureAwait(false)
+
+DevSweep is a pure CLI/console AOT app. There is no synchronization context (`SynchronizationContext.Current` is always `null`). `ConfigureAwait(false)` has zero effect and adds visual noise.
+
+- BANNED: `.ConfigureAwait(false)` on any await expression
+- BANNED: `.ConfigureAwait(true)` (also pointless)
+
+```csharp
+// WRONG
+var result = await module.AnalyzeAsync(cancellationToken).ConfigureAwait(false);
+var confirmed = await userInteraction.ConfirmAsync(message, true, ct).ConfigureAwait(false);
+
+// CORRECT
+var result = await module.AnalyzeAsync(cancellationToken);
+var confirmed = await userInteraction.ConfirmAsync(message, true, ct);
+```
