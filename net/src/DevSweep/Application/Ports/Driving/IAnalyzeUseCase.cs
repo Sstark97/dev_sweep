@@ -7,7 +7,7 @@ namespace DevSweep.Application.Ports.Driving;
 
 public interface IAnalyzeUseCase
 {
-    Task<Result<AnalysisReport, DomainError>> ExecuteAsync(
+    Task<Result<AnalysisReport, DomainError>> Invoke(
         IReadOnlyList<CleanupModuleName> modules,
         CancellationToken cancellationToken);
 }

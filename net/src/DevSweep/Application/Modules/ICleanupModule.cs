@@ -13,8 +13,7 @@ public interface ICleanupModule
     string Description { get; }
     bool IsDestructive { get; }
     bool IsAvailableOnPlatform(OperatingSystemType operatingSystem);
-    Task<Result<ModuleAnalysis, DomainError>> AnalyzeAsync(
-        CleanupContext context, CancellationToken cancellationToken);
+    Task<Result<ModuleAnalysis, DomainError>> AnalyzeAsync(CancellationToken cancellationToken);
     Task<Result<CleanupResult, DomainError>> CleanAsync(
-        CleanupContext context, IReadOnlyList<CleanableItem> items, CancellationToken cancellationToken);
+        IReadOnlyList<CleanableItem> items, CancellationToken cancellationToken);
 }
