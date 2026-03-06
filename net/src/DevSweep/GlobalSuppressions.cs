@@ -4,3 +4,4 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Performance", "CA1515:Consider making public types internal", Justification = "Domain types are intentionally public for use in other layers")]
 [assembly: SuppressMessage("Design", "CA1716:Identifiers should not match keywords", Justification = "Error method name is consistent with the formatter's naming convention (Info, Success, Warning, Error, Debug)")]
 [assembly: SuppressMessage("Performance", "CA1805:Do not initialize unnecessarily", Justification = "Unit.Value provides a named canonical instance for ergonomics even though it equals the type default")]
+[assembly: SuppressMessage("Reliability", "CA2007:Consider calling ConfigureAwait on the awaited task", Justification = "DevSweep is a pure CLI/AOT app with no synchronization context; ConfigureAwait(false) has zero effect and adds visual noise")]

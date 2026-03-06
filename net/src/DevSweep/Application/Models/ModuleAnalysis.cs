@@ -8,10 +8,12 @@ namespace DevSweep.Application.Models;
 
 public sealed record ModuleAnalysis
 {
+    private readonly IReadOnlyList<CleanableItem> items;
+
     private ModuleAnalysis(CleanupModuleName module, IReadOnlyList<CleanableItem> items)
     {
         Module = module;
-        Items = items;
+        this.items = items;
     }
 
     public static Result<ModuleAnalysis, DomainError> Create(CleanupModuleName module, IReadOnlyList<CleanableItem>? items)
@@ -28,19 +30,20 @@ public sealed record ModuleAnalysis
         new(module, []);
 
     public CleanupModuleName Module { get; }
-    private IReadOnlyList<CleanableItem> Items { get; }
+
+    public IReadOnlyList<CleanableItem> Items() => items;
 
     public FileSize TotalSize()
     {
         var zero = FileSize.Create(0).Value;
-        return Items.Aggregate(zero, (acc, item) => acc.Add(item.Size));
+        return items.Aggregate(zero, (acc, item) => acc.Add(item.Size));
     }
 
-    public int SafeItemCount() => Items.Count(item => item.IsSafeToDelete);
+    public int SafeItemCount() => items.Count(item => item.IsSafeToDelete);
 
-    public int UnsafeItemCount() => Items.Count(item => !item.IsSafeToDelete);
+    public int UnsafeItemCount() => items.Count(item => !item.IsSafeToDelete);
 
-    public int ItemCount() => Items.Count;
+    public int ItemCount() => items.Count;
 
-    public bool IsEmpty() => Items.Count == 0;
+    public bool IsEmpty() => items.Count == 0;
 }

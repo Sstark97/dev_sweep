@@ -7,7 +7,7 @@ namespace DevSweep.Application.Ports.Driving;
 
 public interface ICleanupUseCase
 {
-    Task<Result<IReadOnlyList<CleanupSummary>, DomainError>> ExecuteAsync(
+    Task<Result<IReadOnlyList<CleanupSummary>, DomainError>> Invoke(
         IReadOnlyList<CleanupModuleName> modules,
         CancellationToken cancellationToken);
 }
