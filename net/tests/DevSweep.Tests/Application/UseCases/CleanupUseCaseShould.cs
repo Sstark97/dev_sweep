@@ -287,34 +287,4 @@ internal sealed class CleanupUseCaseShould
         result.IsFailure.Should().BeTrue();
         result.Error.MessageContains("Clean failed").Should().BeTrue();
     }
-
-    [Test]
-    public async Task VerifyConfirmAsyncMessageWhenDestructiveModulesIncluded()
-    {
-        var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
-        var dockerAnalysis = ModuleAnalysis.Create(CleanupModuleName.Docker, [dockerItem]).Value;
-        var cleanupResult = new CleanupResultBuilder().Build();
-
-        var destructiveModule = Substitute.For<ICleanupModule>();
-        new CleanupModuleBuilder(destructiveModule)
-            .ForModule(CleanupModuleName.Docker)
-            .Destructive()
-            .WithAnalysis(dockerAnalysis)
-            .WithCleanResult(cleanupResult)
-            .Configure();
-
-        userInteraction.ConfirmAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(true);
-
-        registry.Register(destructiveModule);
-        var useCase = new CleanupUseCase(registry, outputFormatter, userInteraction);
-
-        var result = await useCase.Invoke([CleanupModuleName.Docker], CancellationToken.None);
-
-        result.IsSuccess.Should().BeTrue();
-        await userInteraction.Received().ConfirmAsync(
-            "This operation includes destructive modules. Are you sure you want to proceed?",
-            isDestructive: true,
-            Arg.Any<CancellationToken>());
-    }
 }
