@@ -1,6 +1,8 @@
+using AwesomeAssertions;
 using DevSweep.Application.Models;
 using DevSweep.Domain.Enums;
 using DevSweep.Tests.Builders;
+using Xunit;
 
 namespace DevSweep.Tests.Application.Models;
 
