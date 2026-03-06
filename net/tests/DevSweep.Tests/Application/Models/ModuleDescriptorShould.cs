@@ -1,13 +1,12 @@
 using AwesomeAssertions;
 using DevSweep.Application.Models;
 using DevSweep.Domain.Enums;
-using Xunit;
 
 namespace DevSweep.Tests.Application.Models;
 
-public class ModuleDescriptorShould
+internal sealed class ModuleDescriptorShould
 {
-    [Fact]
+    [Test]
     public void SucceedWithValidParameters()
     {
         var result = ModuleDescriptor.Create(CleanupModuleName.Docker, "Cleans Docker caches", false);
@@ -15,9 +14,9 @@ public class ModuleDescriptorShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
+    [Test]
+    [Arguments("")]
+    [Arguments("   ")]
     public void FailWhenDescriptionIsMissingOrEmpty(string description)
     {
         var result = ModuleDescriptor.Create(CleanupModuleName.Docker, description, false);
@@ -26,7 +25,7 @@ public class ModuleDescriptorShould
         result.Error.IsValidationError().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ReportDestructiveWhenMarkedAsDestructive()
     {
         var descriptorResult = ModuleDescriptor.Create(CleanupModuleName.Docker, "Cleans Docker caches", true);
@@ -36,7 +35,7 @@ public class ModuleDescriptorShould
         descriptor.IsDestructive().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ReportNonDestructiveWhenNotMarkedAsDestructive()
     {
         var descriptorResult = ModuleDescriptor.Create(CleanupModuleName.Homebrew, "Cleans Homebrew caches", false);

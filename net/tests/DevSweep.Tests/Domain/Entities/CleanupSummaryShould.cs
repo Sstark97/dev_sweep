@@ -1,15 +1,13 @@
 using AwesomeAssertions;
 using DevSweep.Domain.Entities;
 using DevSweep.Domain.Enums;
-using DevSweep.Domain.ValueObjects;
 using DevSweep.Tests.Builders;
-using Xunit;
 
 namespace DevSweep.Tests.Domain.Entities;
 
-public class CleanupSummaryShould
+internal sealed class CleanupSummaryShould
 {
-    [Fact]
+    [Test]
     public void FailWhenItemsListIsEmpty()
     {
         var emptyItems = new List<CleanableItem>();
@@ -23,7 +21,7 @@ public class CleanupSummaryShould
         result.Error.IsInvalidOperationError().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void SucceedWithValidItems()
     {
         var safeItem = new CleanableItemBuilder()
@@ -41,7 +39,7 @@ public class CleanupSummaryShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void CountTotalItemsScanned()
     {
         var firstItem = new CleanableItemBuilder()
@@ -71,7 +69,7 @@ public class CleanupSummaryShould
         summary.TotalItemsScanned.Should().Be(3);
     }
 
-    [Fact]
+    [Test]
     public void CountOnlySafeItems()
     {
         var safeItem = new CleanableItemBuilder()
@@ -101,7 +99,7 @@ public class CleanupSummaryShould
         summary.SafeItemsFound.Should().Be(2);
     }
 
-    [Fact]
+    [Test]
     public void CountZeroSafeItemsWhenAllUnsafe()
     {
         var firstUnsafeItem = new CleanableItemBuilder()
@@ -126,7 +124,7 @@ public class CleanupSummaryShould
         summary.SafeItemsFound.Should().Be(0);
     }
 
-    [Fact]
+    [Test]
     public void PreserveCleanupResult()
     {
         var safeItem = new CleanableItemBuilder()
@@ -146,7 +144,7 @@ public class CleanupSummaryShould
         summary.Result.Should().Be(originalCleanupResult);
     }
 
-    [Fact]
+    [Test]
     public void PreserveModuleName()
     {
         var safeItem = new CleanableItemBuilder()
@@ -166,7 +164,7 @@ public class CleanupSummaryShould
         summary.Module.Should().Be(CleanupModuleName.Projects);
     }
 
-    [Fact]
+    [Test]
     public void FailWhenItemsIsNull()
     {
         var result = CleanupSummary.Create(

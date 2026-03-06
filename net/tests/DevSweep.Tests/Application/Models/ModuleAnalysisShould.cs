@@ -2,13 +2,12 @@ using AwesomeAssertions;
 using DevSweep.Application.Models;
 using DevSweep.Domain.Enums;
 using DevSweep.Tests.Builders;
-using Xunit;
 
 namespace DevSweep.Tests.Application.Models;
 
-public class ModuleAnalysisShould
+internal sealed class ModuleAnalysisShould
 {
-    [Fact]
+    [Test]
     public void SucceedWithValidItems()
     {
         var dockerItem = new CleanableItemBuilder()
@@ -22,7 +21,7 @@ public class ModuleAnalysisShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void SucceedWithEmptyItemsList()
     {
         var result = ModuleAnalysis.Create(CleanupModuleName.Docker, []);
@@ -30,7 +29,7 @@ public class ModuleAnalysisShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void CalculateTotalSizeFromAllItems()
     {
         var firstItem = new CleanableItemBuilder()
@@ -53,7 +52,7 @@ public class ModuleAnalysisShould
         analysis.TotalSize().Should().Be(firstItem.Size.Add(secondItem.Size));
     }
 
-    [Fact]
+    [Test]
     public void CountSafeItems()
     {
         var safeItem = new CleanableItemBuilder()
@@ -79,7 +78,7 @@ public class ModuleAnalysisShould
         analysis.SafeItemCount().Should().Be(2);
     }
 
-    [Fact]
+    [Test]
     public void CountUnsafeItems()
     {
         var safeItem = new CleanableItemBuilder()
@@ -100,7 +99,7 @@ public class ModuleAnalysisShould
         analysis.UnsafeItemCount().Should().Be(1);
     }
 
-    [Fact]
+    [Test]
     public void CountTotalItems()
     {
         var safeItem = new CleanableItemBuilder()
@@ -121,7 +120,7 @@ public class ModuleAnalysisShould
         analysis.ItemCount().Should().Be(2);
     }
 
-    [Fact]
+    [Test]
     public void ReportEmptyWhenNoItems()
     {
         var analysisResult = ModuleAnalysis.Create(CleanupModuleName.Docker, []);
@@ -131,7 +130,7 @@ public class ModuleAnalysisShould
         analysis.IsEmpty().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ReportNotEmptyWhenHasItems()
     {
         var dockerItem = new CleanableItemBuilder()
@@ -147,7 +146,7 @@ public class ModuleAnalysisShould
         analysis.IsEmpty().Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void CreateEmptyAnalysis()
     {
         var emptyAnalysis = ModuleAnalysis.CreateEmpty(CleanupModuleName.Docker);
@@ -156,7 +155,7 @@ public class ModuleAnalysisShould
         emptyAnalysis.Module.Should().Be(CleanupModuleName.Docker);
     }
 
-    [Fact]
+    [Test]
     public void FailWhenItemsIsNull()
     {
         var result = ModuleAnalysis.Create(CleanupModuleName.Docker, null);

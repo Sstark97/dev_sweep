@@ -2,13 +2,12 @@ using AwesomeAssertions;
 using DevSweep.Application.Models;
 using DevSweep.Domain.Enums;
 using DevSweep.Tests.Builders;
-using Xunit;
 
 namespace DevSweep.Tests.Application.Models;
 
-public class AnalysisReportShould
+internal sealed class AnalysisReportShould
 {
-    [Fact]
+    [Test]
     public void SucceedWithValidModuleAnalyses()
     {
         var dockerAnalysis = ModuleAnalysis.CreateEmpty(CleanupModuleName.Docker);
@@ -18,7 +17,7 @@ public class AnalysisReportShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void SucceedWithEmptyModuleAnalysesList()
     {
         var result = AnalysisReport.Create([]);
@@ -26,7 +25,7 @@ public class AnalysisReportShould
         result.IsSuccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void CalculateTotalSizeAcrossModules()
     {
         var dockerItem = new CleanableItemBuilder()
@@ -52,7 +51,7 @@ public class AnalysisReportShould
         report.TotalSize().Should().Be(dockerItem.Size.Add(homebrewItem.Size));
     }
 
-    [Fact]
+    [Test]
     public void CountTotalItemsAcrossModules()
     {
         var dockerItem = new CleanableItemBuilder()
@@ -81,7 +80,7 @@ public class AnalysisReportShould
         report.TotalItemCount().Should().Be(3);
     }
 
-    [Fact]
+    [Test]
     public void CountModules()
     {
         var dockerAnalysis = ModuleAnalysis.CreateEmpty(CleanupModuleName.Docker);
@@ -94,7 +93,7 @@ public class AnalysisReportShould
         report.ModuleCount().Should().Be(2);
     }
 
-    [Fact]
+    [Test]
     public void ReportEmptyWhenAllModulesEmpty()
     {
         var emptyDockerAnalysis = ModuleAnalysis.CreateEmpty(CleanupModuleName.Docker);
@@ -107,7 +106,7 @@ public class AnalysisReportShould
         report.IsEmpty().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public void ReportNotEmptyWhenAnyModuleHasItems()
     {
         var dockerItem = new CleanableItemBuilder()
@@ -126,7 +125,7 @@ public class AnalysisReportShould
         report.IsEmpty().Should().BeFalse();
     }
 
-    [Fact]
+    [Test]
     public void CreateEmptyReport()
     {
         var emptyReport = AnalysisReport.CreateEmpty();
@@ -136,7 +135,7 @@ public class AnalysisReportShould
         emptyReport.TotalItemCount().Should().Be(0);
     }
 
-    [Fact]
+    [Test]
     public void FailWhenModuleAnalysesIsNull()
     {
         var result = AnalysisReport.Create(null);
