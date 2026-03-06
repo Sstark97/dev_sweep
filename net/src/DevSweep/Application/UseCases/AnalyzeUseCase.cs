@@ -14,13 +14,9 @@ public sealed class AnalyzeUseCase(
 ) : IAnalyzeUseCase
 {
     public async Task<Result<AnalysisReport, DomainError>> Invoke(
-        IReadOnlyList<CleanupModuleName>? modules,
+        IReadOnlyList<CleanupModuleName> modules,
         CancellationToken cancellationToken)
     {
-        if (modules is null)
-            return Result<AnalysisReport, DomainError>.Failure(
-                DomainError.Validation("modules is required"));
-
         if (modules.Count == 0)
             return Result<AnalysisReport, DomainError>.Success(AnalysisReport.CreateEmpty());
 

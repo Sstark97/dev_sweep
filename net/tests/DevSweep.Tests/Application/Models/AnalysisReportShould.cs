@@ -143,4 +143,16 @@ internal sealed class AnalysisReportShould
         result.IsFailure.Should().BeTrue();
         result.Error.IsValidationError().Should().BeTrue();
     }
+
+    [Test]
+    public void FailWhenModuleAnalysesContainDuplicates()
+    {
+        var dockerAnalysis = ModuleAnalysis.CreateEmpty(CleanupModuleName.Docker);
+        var duplicateDockerAnalysis = ModuleAnalysis.CreateEmpty(CleanupModuleName.Docker);
+
+        var result = AnalysisReport.Create([dockerAnalysis, duplicateDockerAnalysis]);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.IsValidationError().Should().BeTrue();
+    }
 }

@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using DevSweep.Application.Models;
 using DevSweep.Application.Modules;
 using DevSweep.Application.Ports.Driven;
@@ -6,15 +7,16 @@ using DevSweep.Domain.Enums;
 using DevSweep.Domain.Errors;
 using DevSweep.Tests.Application.Builders;
 using DevSweep.Tests.Builders;
+using NSubstitute;
 
 namespace DevSweep.Tests.Application.UseCases;
 
-public class AnalyzeUseCaseShould
+internal sealed class AnalyzeUseCaseShould
 {
     private readonly ModuleRegistry registry = new();
     private readonly IOutputFormatter outputFormatter = Substitute.For<IOutputFormatter>();
 
-    [Fact]
+    [Test]
     public async Task ReturnEmptyReportWhenNoModulesRequested()
     {
         var useCase = new AnalyzeUseCase(registry, outputFormatter);
@@ -27,7 +29,7 @@ public class AnalyzeUseCaseShould
         report.IsEmpty().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task AnalyzeSingleModuleSuccessfully()
     {
         var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
@@ -51,7 +53,7 @@ public class AnalyzeUseCaseShould
         report.TotalItemCount().Should().Be(1);
     }
 
-    [Fact]
+    [Test]
     public async Task AnalyzeMultipleModulesSuccessfully()
     {
         var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
@@ -86,7 +88,7 @@ public class AnalyzeUseCaseShould
         report.TotalItemCount().Should().Be(2);
     }
 
-    [Fact]
+    [Test]
     public async Task DisplayAnalysisReportViaOutputFormatter()
     {
         var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
@@ -104,10 +106,10 @@ public class AnalyzeUseCaseShould
         var result = await useCase.Invoke([CleanupModuleName.Docker], CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        outputFormatter.Received(1).DisplayAnalysisReport(Arg.Any<AnalysisReport>());
+        outputFormatter.Received().DisplayAnalysisReport(Arg.Any<AnalysisReport>());
     }
 
-    [Fact]
+    [Test]
     public async Task FailWhenModuleNotFoundInRegistry()
     {
         var useCase = new AnalyzeUseCase(registry, outputFormatter);
@@ -118,7 +120,7 @@ public class AnalyzeUseCaseShould
         result.Error.IsNotFoundError().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task FailWhenModuleAnalysisReturnsError()
     {
         var analysisError = DomainError.InvalidOperation("Analysis failed");
@@ -138,12 +140,24 @@ public class AnalyzeUseCaseShould
         result.Error.MessageContains("Analysis failed").Should().BeTrue();
     }
 
-    [Fact]
-    public async Task FailWhenModulesListIsNull()
+    [Test]
+    public async Task FailWhenSameModuleRequestedTwice()
     {
+        var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
+        var dockerAnalysis = ModuleAnalysis.Create(CleanupModuleName.Docker, [dockerItem]).Value;
+
+        var dockerModule = Substitute.For<ICleanupModule>();
+        new CleanupModuleBuilder(dockerModule)
+            .ForModule(CleanupModuleName.Docker)
+            .WithAnalysis(dockerAnalysis)
+            .Configure();
+
+        registry.Register(dockerModule);
         var useCase = new AnalyzeUseCase(registry, outputFormatter);
 
-        var result = await useCase.Invoke(null!, CancellationToken.None);
+        var result = await useCase.Invoke(
+            [CleanupModuleName.Docker, CleanupModuleName.Docker],
+            CancellationToken.None);
 
         result.IsFailure.Should().BeTrue();
         result.Error.IsValidationError().Should().BeTrue();

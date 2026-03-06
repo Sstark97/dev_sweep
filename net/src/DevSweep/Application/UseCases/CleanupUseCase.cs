@@ -17,13 +17,9 @@ public sealed class CleanupUseCase(
     private readonly IReadOnlyList<CleanupSummary> emptySummary = [];
 
     public async Task<Result<IReadOnlyList<CleanupSummary>, DomainError>> Invoke(
-        IReadOnlyList<CleanupModuleName>? modules,
+        IReadOnlyList<CleanupModuleName> modules,
         CancellationToken cancellationToken)
     {
-        if (modules is null)
-            return Result<IReadOnlyList<CleanupSummary>, DomainError>.Failure(
-                DomainError.Validation("modules is required"));
-
         if (modules.Count == 0)
             return Result<IReadOnlyList<CleanupSummary>, DomainError>.Success(emptySummary);
 

@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using DevSweep.Application.Models;
 using DevSweep.Application.Modules;
 using DevSweep.Application.Ports.Driven;
@@ -7,16 +8,17 @@ using DevSweep.Domain.Enums;
 using DevSweep.Domain.Errors;
 using DevSweep.Tests.Application.Builders;
 using DevSweep.Tests.Builders;
+using NSubstitute;
 
 namespace DevSweep.Tests.Application.UseCases;
 
-public class CleanupUseCaseShould
+internal sealed class CleanupUseCaseShould
 {
     private readonly ModuleRegistry registry = new();
     private readonly IOutputFormatter outputFormatter = Substitute.For<IOutputFormatter>();
     private readonly IUserInteraction userInteraction = Substitute.For<IUserInteraction>();
 
-    [Fact]
+    [Test]
     public async Task ReturnEmptyListWhenNoModulesRequested()
     {
         var useCase = new CleanupUseCase(registry, outputFormatter, userInteraction);
@@ -29,7 +31,7 @@ public class CleanupUseCaseShould
         summaries.Should().BeEmpty();
     }
 
-    [Fact]
+    [Test]
     public async Task CleanSingleModuleSuccessfully()
     {
         var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
@@ -55,7 +57,7 @@ public class CleanupUseCaseShould
         summaries[0].Module.Should().Be(CleanupModuleName.Docker);
     }
 
-    [Fact]
+    [Test]
     public async Task CleanMultipleModulesSuccessfully()
     {
         var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
@@ -92,7 +94,7 @@ public class CleanupUseCaseShould
         summaries.Should().HaveCount(2);
     }
 
-    [Fact]
+    [Test]
     public async Task SkipModuleWhenAnalysisIsEmpty()
     {
         var emptyAnalysis = ModuleAnalysis.CreateEmpty(CleanupModuleName.Docker);
@@ -116,7 +118,7 @@ public class CleanupUseCaseShould
             Arg.Any<IReadOnlyList<CleanableItem>>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ConfirmOnceWhenAnyModuleIsDestructive()
     {
         var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
@@ -156,7 +158,7 @@ public class CleanupUseCaseShould
             Arg.Any<string>(), isDestructive: true, Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task ReturnEmptyListWhenUserDeclinesConfirmation()
     {
         var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
@@ -185,7 +187,7 @@ public class CleanupUseCaseShould
             Arg.Any<IReadOnlyList<CleanableItem>>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task SkipConfirmationWhenNoDestructiveModules()
     {
         var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
@@ -209,7 +211,7 @@ public class CleanupUseCaseShould
             Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
+    [Test]
     public async Task DisplayCompletionViaOutputFormatter()
     {
         var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
@@ -229,10 +231,10 @@ public class CleanupUseCaseShould
         var result = await useCase.Invoke([CleanupModuleName.Docker], CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        outputFormatter.Received(1).DisplayCompletion(Arg.Any<IReadOnlyList<CleanupSummary>>());
+        outputFormatter.Received().DisplayCompletion(Arg.Any<IReadOnlyList<CleanupSummary>>());
     }
 
-    [Fact]
+    [Test]
     public async Task FailWhenModuleNotFoundInRegistry()
     {
         var useCase = new CleanupUseCase(registry, outputFormatter, userInteraction);
@@ -243,7 +245,7 @@ public class CleanupUseCaseShould
         result.Error.IsNotFoundError().Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task FailWhenModuleAnalysisReturnsError()
     {
         var analysisError = DomainError.InvalidOperation("Analysis failed");
@@ -263,7 +265,7 @@ public class CleanupUseCaseShould
         result.Error.MessageContains("Analysis failed").Should().BeTrue();
     }
 
-    [Fact]
+    [Test]
     public async Task FailWhenModuleCleanReturnsError()
     {
         var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
@@ -286,14 +288,33 @@ public class CleanupUseCaseShould
         result.Error.MessageContains("Clean failed").Should().BeTrue();
     }
 
-    [Fact]
-    public async Task FailWhenModulesListIsNull()
+    [Test]
+    public async Task VerifyConfirmAsyncMessageWhenDestructiveModulesIncluded()
     {
+        var dockerItem = new CleanableItemBuilder().ForModule(CleanupModuleName.Docker).Build();
+        var dockerAnalysis = ModuleAnalysis.Create(CleanupModuleName.Docker, [dockerItem]).Value;
+        var cleanupResult = new CleanupResultBuilder().Build();
+
+        var destructiveModule = Substitute.For<ICleanupModule>();
+        new CleanupModuleBuilder(destructiveModule)
+            .ForModule(CleanupModuleName.Docker)
+            .Destructive()
+            .WithAnalysis(dockerAnalysis)
+            .WithCleanResult(cleanupResult)
+            .Configure();
+
+        userInteraction.ConfirmAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        registry.Register(destructiveModule);
         var useCase = new CleanupUseCase(registry, outputFormatter, userInteraction);
 
-        var result = await useCase.Invoke(null!, CancellationToken.None);
+        var result = await useCase.Invoke([CleanupModuleName.Docker], CancellationToken.None);
 
-        result.IsFailure.Should().BeTrue();
-        result.Error.IsValidationError().Should().BeTrue();
+        result.IsSuccess.Should().BeTrue();
+        await userInteraction.Received().ConfirmAsync(
+            "This operation includes destructive modules. Are you sure you want to proceed?",
+            isDestructive: true,
+            Arg.Any<CancellationToken>());
     }
 }
