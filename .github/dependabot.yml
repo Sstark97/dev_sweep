@@ -1,10 +1,6 @@
 version: 2
 updates:
   - package-ecosystem: "nuget"
-    directory: "/net/src/DevSweep/"
-    schedule:
-      interval: "weekly"
-  - package-ecosystem: "nuget"
-    directory: "/net/tests/DevSweep.Tests/"
+    directory: "/"
     schedule:
       interval: "weekly"
