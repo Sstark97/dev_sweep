@@ -31,7 +31,8 @@ public class FilePathCreationShould
     [Fact]
     public void SucceedWhenPathIsValid()
     {
-        var result = FilePath.Create("/valid/path/file.txt");
+        var path = Path.Combine("valid", "path", "file.txt");
+        var result = FilePath.Create(path);
 
         result.IsSuccess.Should().BeTrue();
     }
@@ -39,7 +40,7 @@ public class FilePathCreationShould
     [Fact]
     public void PreserveOriginalPathValue()
     {
-        var originalPath = "/documents/report.pdf";
+        var originalPath = Path.Combine("documents", "report.pdf");
         var result = FilePath.Create(originalPath);
         var filePath = result.Value;
 
@@ -50,7 +51,8 @@ public class FilePathCreationShould
     [Fact]
     public void ExtractFileNameCorrectly()
     {
-        var result = FilePath.Create("/path/to/file.txt");
+        var path = Path.Combine("path", "to", "file.txt");
+        var result = FilePath.Create(path);
         var filePath = result.Value;
 
         result.IsSuccess.Should().BeTrue();
@@ -72,7 +74,8 @@ public class FilePathCreationShould
     [Fact]
     public void ExtractExtensionCorrectly()
     {
-        var result = FilePath.Create("/path/to/file.txt");
+        var path = Path.Combine("path", "to", "file.txt");
+        var result = FilePath.Create(path);
         var filePath = result.Value;
 
         result.IsSuccess.Should().BeTrue();
@@ -82,8 +85,8 @@ public class FilePathCreationShould
     [Fact]
     public void SupportValueEqualitySemantics()
     {
-        var firstValue = FilePath.Create("/path/to/file.txt").Value;
-        var secondValue = FilePath.Create("/path/to/file.txt").Value;
+        var firstValue = FilePath.Create(Path.Combine("path","to", "file.txt")).Value;
+        var secondValue = FilePath.Create(Path.Combine("path", "to", "file.txt")).Value;
 
         firstValue.Should().Be(secondValue);
         (firstValue == secondValue).Should().BeTrue();
