@@ -34,7 +34,7 @@ dev_sweep/
 *Depends on Phase 2, can run in parallel*
 
 - [x] **#30** - Implement file system adapter
-- [ ] **#31** - Implement process and command adapters
+- [x] **#31** - Implement process and command adapters
 - [ ] **#32** - Implement cross-platform environment provider
 
 ### ⏳ Phase 4: Cleanup Modules
