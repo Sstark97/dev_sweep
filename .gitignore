@@ -97,4 +97,5 @@ BenchmarkDotNet.Artifacts/
 .claude/agents/
 .claude/backups/
 .claude/commands/
+.claude/memory/
 .claude/settings.json

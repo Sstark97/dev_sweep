@@ -106,11 +106,49 @@ Before marking any task complete:
 
 ## Task Workflow
 
-See `.claude/workspace/AGENTS.md` for the complete task flow through planning → progress → review → completed.
+Tasks move through the workspace directories in a linear pipeline:
+
+```
+planning/  →  progress/  →  review/  →  completed/
+   ↑            ↑            ↑            ↑
+Planner     Developer    Developer    Reviewer
+creates     reads &      signals       approves
+plan        implements   done
+```
+
+### 1. `planning/` — Plans Created Here
+
+The **backend-planner** creates `PLAN-{task-slug}.md` files here containing: task description, acceptance criteria, files to create/modify, implementation steps, testing requirements, and complexity estimate.
+
+### 2. `progress/` — Active Implementation
+
+The coordinator moves the plan file here when implementation starts. The **backend-developer** reads it, implements step by step, checks off items, runs build and tests, then signals completion.
+
+### 3. `review/` — Code Under Review
+
+The coordinator moves the plan file here when implementation is complete. The **code-reviewer** examines `git diff`, creates `REVIEW-{task-slug}.md` with verdict PASS / FAIL / FAIL-TESTS.
+
+### 4. `completed/` — Finished Tasks
+
+All task files are moved here once the review passes (or after the one allowed retry). This directory is the permanent historical record.
+
+## WIP.md — Coordinator Tracking
+
+The `do-task` command creates `.claude/workspace/WIP.md` to track its own progress through phases (Setup → Analysis → Planning → Implementation → Review). It is deleted when the task completes.
+
+## Workspace Rules
+
+1. Only agents write to `workspace/` — the coordinator only moves files between directories
+2. Plans are contracts — developers follow plans exactly; flag ambiguities but proceed with simplest interpretation
+3. One retry maximum — if review fails, developer gets ONE chance to fix issues
+4. No loops — linear pipeline: planning → implementation → review → done
+5. WIP.md is ephemeral — deleted after task completion
+6. Plan files are permanent — moved to `completed/` as historical record
 
 ## Current Phase
 
 **Phase 1 Complete:** Domain layer with value objects, entities, Result type
-**Phase 2 In Progress:** Application layer ports and use cases
+**Phase 2 Complete:** Application layer ports and use cases
+**Phase 3 In Progress:** Infrastructure adapters (file system done, process and command adapters and environment provider in progress)
 
 See `PROGRESS.md` for complete roadmap.

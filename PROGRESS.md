@@ -27,13 +27,13 @@ dev_sweep/
 ### ⏳ Phase 2: Application Layer
 *Depends on Phase 1*
 
-- [ ] **#28** - Define port interfaces and module contracts
-- [ ] **#29** - Implement use cases
+- [x] **#28** - Define port interfaces and module contracts
+- [x] **#29** - Implement use cases
 
 ### ⏳ Phase 3: Infrastructure Adapters
 *Depends on Phase 2, can run in parallel*
 
-- [ ] **#30** - Implement file system adapter
+- [x] **#30** - Implement file system adapter
 - [ ] **#31** - Implement process and command adapters
 - [ ] **#32** - Implement cross-platform environment provider
 
