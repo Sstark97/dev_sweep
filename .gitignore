@@ -99,3 +99,6 @@ BenchmarkDotNet.Artifacts/
 .claude/commands/
 .claude/memory/
 .claude/settings.json
+
+# Copilot
+.github/prompts/
