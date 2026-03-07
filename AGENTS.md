@@ -149,6 +149,6 @@ The `do-task` command creates `.claude/workspace/WIP.md` to track its own progre
 
 **Phase 1 Complete:** Domain layer with value objects, entities, Result type
 **Phase 2 Complete:** Application layer ports and use cases
-**Phase 3 In Progress:** Infrastructure adapters (file system done, process and command adapters and environment provider in progress)
+**Phase 3 Complete:** Infrastructure adapters for file system, processes, cross-platform environment
 
 See `PROGRESS.md` for complete roadmap.
