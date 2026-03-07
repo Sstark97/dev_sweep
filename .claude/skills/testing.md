@@ -40,6 +40,29 @@ public class FilePathTests          // WRONG: no "Should" suffix
 }
 ```
 
+## Ubiquitous Language in Test Names
+
+Test names must use the language of the domain, not the language of the implementation.
+
+### Rules
+- NO `Return` prefix — it is a technical/implementation verb, not a business behavior description
+- NO boolean words in test names: `true`, `false`
+- NO data type names (`List`, `String`, `Int`, `Bool`, etc.)
+- YES verbs that describe observable business behavior: `Detect`, `Know`, `Find`, `Treat`, `Calculate`, `Fail`, `Delete`, `Succeed`
+- YES natural language that reads like a business requirement
+
+```csharp
+// WRONG — technical vocabulary, boolean words, data type names
+public void ReturnTrueWhenDirectoryExists() { }
+public void ReturnFalseWhenDirectoryDoesNotExist() { }
+public void ReturnEmptyListWhenNoFilesMatch() { }
+
+// CORRECT — natural, ubiquitous language
+public void DetectExistingDirectory() { }
+public void NotDetectMissingDirectory() { }
+public void FindNoFilesWhenNoneMatchPattern() { }
+```
+
 ---
 
 # Arrange-Act-Extract-Assert (MANDATORY)
@@ -248,3 +271,7 @@ FilePath.Create("C:\\Users\\test\\file")   // WRONG: Windows-specific
 - [ ] No magic numbers for sizes — use `.Small()` / `.Large()` on Builders
 - [ ] No abstract base test classes
 - [ ] Builders for complex domain object creation
+- [ ] No `Return` prefix in test names (use behavior verbs instead)
+- [ ] No boolean words (`true`, `false`) in test names
+- [ ] No data type names in test names (`List`, `String`, etc.)
+- [ ] Names describe observable behavior, not implementation return values
