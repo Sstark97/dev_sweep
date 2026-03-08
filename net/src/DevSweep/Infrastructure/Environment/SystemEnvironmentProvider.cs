@@ -29,6 +29,15 @@ public sealed class SystemEnvironmentProvider : IEnvironmentProvider
             _ => throw new PlatformNotSupportedException($"Unsupported operating system: {operatingSystem}")
         });
 
+    public FilePath JetBrainsCachePath() => ToFilePath(
+        operatingSystem switch
+        {
+            OperatingSystemType.MacOS => MacOsPaths.JetBrainsCache(homeDirectory),
+            OperatingSystemType.Linux => LinuxPaths.JetBrainsCache(homeDirectory),
+            OperatingSystemType.Windows => WindowsPaths.JetBrainsCache(),
+            _ => throw new PlatformNotSupportedException($"Unsupported operating system: {operatingSystem}")
+        });
+
     public FilePath DockerConfigPath() => ToFilePath(
         operatingSystem switch
         {

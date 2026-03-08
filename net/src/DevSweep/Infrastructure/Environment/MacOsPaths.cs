@@ -5,6 +5,9 @@ internal static class MacOsPaths
     internal static string JetBrainsBase(string home) =>
         Path.Combine(home, "Library", "Application Support", "JetBrains");
 
+    internal static string JetBrainsCache(string home) =>
+        Path.Combine(home, "Library", "Caches", "JetBrains");
+
     internal static string DockerConfig(string home) =>
         Path.Combine(home, ".docker");
 

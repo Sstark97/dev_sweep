@@ -8,6 +8,7 @@ public interface IEnvironmentProvider
     OperatingSystemType CurrentOperatingSystem { get; }
     FilePath HomePath { get; }
     FilePath JetBrainsBasePath();
+    FilePath JetBrainsCachePath();
     FilePath DockerConfigPath();
     FilePath MavenRepositoryPath();
     FilePath GradleCachePath();

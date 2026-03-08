@@ -35,6 +35,15 @@ internal sealed class SystemEnvironmentProviderShould
     }
 
     [Test]
+    public void ProvideJetBrainsCachePathWithJetBrainsSegment()
+    {
+        var path = provider.JetBrainsCachePath().ToString();
+
+        path.Should().NotBeEmpty();
+        path.Should().Contain("JetBrains");
+    }
+
+    [Test]
     public void ProvideDockerConfigPathWithDockerSegment()
     {
         var path = provider.DockerConfigPath().ToString();
