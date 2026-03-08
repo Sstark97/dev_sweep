@@ -15,5 +15,5 @@ public interface ICleanupModule
     bool IsAvailableOnPlatform(OperatingSystemType operatingSystem);
     Task<Result<ModuleAnalysis, DomainError>> AnalyzeAsync(CancellationToken cancellationToken);
     Task<Result<CleanupResult, DomainError>> CleanAsync(
-        IReadOnlyList<CleanableItem> items, CancellationToken cancellationToken);
+        IReadOnlyList<CleanableItem> artifactsToClean, CancellationToken cancellationToken);
 }
