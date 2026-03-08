@@ -102,3 +102,6 @@ BenchmarkDotNet.Artifacts/
 
 # Copilot
 .github/prompts/
+.github/agents
+.github/instructions
+.github/_backup_duplicates
