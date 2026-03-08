@@ -7,6 +7,11 @@ internal static class WindowsPaths
             System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
             "JetBrains");
 
+    internal static string JetBrainsCache() =>
+        Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+            "JetBrains", "caches");
+
     internal static string DockerConfig(string home) =>
         Path.Combine(home, ".docker");
 

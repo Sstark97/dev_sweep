@@ -5,6 +5,9 @@ internal static class LinuxPaths
     internal static string JetBrainsBase(string home) =>
         Path.Combine(home, ".local", "share", "JetBrains", "Toolbox");
 
+    internal static string JetBrainsCache(string home) =>
+        Path.Combine(home, ".cache", "JetBrains");
+
     internal static string DockerConfig(string home) =>
         Path.Combine(home, ".docker");
 
