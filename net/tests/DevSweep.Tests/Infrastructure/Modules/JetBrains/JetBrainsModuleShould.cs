@@ -18,8 +18,8 @@ internal sealed class JetBrainsModuleShould
     private readonly IEnvironmentProvider environment = Substitute.For<IEnvironmentProvider>();
     private readonly JetBrainsModule module;
 
-    private static readonly FilePath BasePath = FilePath.Create("/any/base/path").Value;
-    private static readonly FilePath CachePath = FilePath.Create("/any/cache/path").Value;
+    private static readonly FilePath BasePath = FilePath.Create(Path.Combine("any", "base", "path")).Value;
+    private static readonly FilePath CachePath = FilePath.Create(Path.Combine("any", "cache", "path")).Value;
 
     public JetBrainsModuleShould()
     {
@@ -75,7 +75,7 @@ internal sealed class JetBrainsModuleShould
     [Test]
     public async Task FindNoItemsWhenSingleVersionInstalled()
     {
-        var rider = FilePath.Create("/any/base/path/Rider2024.1").Value;
+        var rider = FilePath.Create(Path.Combine("any", "base", "path", "Rider2024.1")).Value;
         GivenBaseDirectoryContains(rider);
 
         var result = await module.AnalyzeAsync(CancellationToken.None);
@@ -88,8 +88,8 @@ internal sealed class JetBrainsModuleShould
     [Test]
     public async Task FlagOlderVersionForCleanupWhenTwoVersionsInstalled()
     {
-        var olderRider = FilePath.Create("/any/base/path/Rider2023.3").Value;
-        var newerRider = FilePath.Create("/any/base/path/Rider2024.1").Value;
+        var olderRider = FilePath.Create(Path.Combine("any", "base", "path", "Rider2023.3")).Value;
+        var newerRider = FilePath.Create(Path.Combine("any", "base", "path", "Rider2024.1")).Value;
         var smallSize = new CleanableItemBuilder().Small().Build().Size;
         GivenBaseDirectoryContains(olderRider, newerRider);
         GivenDirectoryHasSize(olderRider, smallSize);
@@ -106,9 +106,9 @@ internal sealed class JetBrainsModuleShould
     [Test]
     public async Task FlagAllButLatestForCleanupWhenMultipleVersionsInstalled()
     {
-        var earliestRider = FilePath.Create("/any/base/path/Rider2022.3").Value;
-        var middleRider = FilePath.Create("/any/base/path/Rider2023.3").Value;
-        var latestRider = FilePath.Create("/any/base/path/Rider2024.1").Value;
+        var earliestRider = FilePath.Create(Path.Combine("any", "base", "path", "Rider2022.3")).Value;
+        var middleRider = FilePath.Create(Path.Combine("any", "base", "path", "Rider2023.3")).Value;
+        var latestRider = FilePath.Create(Path.Combine("any", "base", "path", "Rider2024.1")).Value;
         var smallSize = new CleanableItemBuilder().Small().Build().Size;
         GivenBaseDirectoryContains(earliestRider, middleRider, latestRider);
         GivenAllDirectoriesHaveSize(smallSize);
@@ -124,8 +124,8 @@ internal sealed class JetBrainsModuleShould
     [Test]
     public async Task SortVersionsNaturallyAcrossSegments()
     {
-        var patchVersion = FilePath.Create("/any/base/path/Rider2023.3.1").Value;
-        var minorVersion = FilePath.Create("/any/base/path/Rider2024.1").Value;
+        var patchVersion = FilePath.Create(Path.Combine("any", "base", "path", "Rider2023.3.1")).Value;
+        var minorVersion = FilePath.Create(Path.Combine("any", "base", "path", "Rider2024.1")).Value;
         var smallSize = new CleanableItemBuilder().Small().Build().Size;
         GivenBaseDirectoryContains(minorVersion, patchVersion);
         GivenDirectoryHasSize(patchVersion, smallSize);
@@ -141,10 +141,10 @@ internal sealed class JetBrainsModuleShould
     [Test]
     public async Task FlagOneOutdatedVersionPerProductLineIndependently()
     {
-        var olderRider = FilePath.Create("/any/base/path/Rider2023.3").Value;
-        var newerRider = FilePath.Create("/any/base/path/Rider2024.1").Value;
-        var olderWebStorm = FilePath.Create("/any/base/path/WebStorm2023.3").Value;
-        var newerWebStorm = FilePath.Create("/any/base/path/WebStorm2024.1").Value;
+        var olderRider = FilePath.Create(Path.Combine("any", "base", "path", "Rider2023.3")).Value;
+        var newerRider = FilePath.Create(Path.Combine("any", "base", "path", "Rider2024.1")).Value;
+        var olderWebStorm = FilePath.Create(Path.Combine("any", "base", "path", "WebStorm2023.3")).Value;
+        var newerWebStorm = FilePath.Create(Path.Combine("any", "base", "path", "WebStorm2024.1")).Value;
         var smallSize = new CleanableItemBuilder().Small().Build().Size;
         GivenBaseDirectoryContains(olderRider, newerRider, olderWebStorm, newerWebStorm);
         GivenAllDirectoriesHaveSize(smallSize);
@@ -200,8 +200,8 @@ internal sealed class JetBrainsModuleShould
     [Test]
     public async Task ExcludeNestedSubdirectoriesFromVersionDetection()
     {
-        var immediateChild = FilePath.Create("/any/base/path/Rider2024.1").Value;
-        var nestedChild = FilePath.Create("/any/base/path/Rider2024.1/plugins/SomePlugin").Value;
+        var immediateChild = FilePath.Create(Path.Combine("any", "base", "path", "Rider2024.1")).Value;
+        var nestedChild = FilePath.Create(Path.Combine("any", "base", "path", "Rider2024.1", "plugins", "SomePlugin")).Value;
         GivenBaseDirectoryContains(immediateChild, nestedChild);
 
         var result = await module.AnalyzeAsync(CancellationToken.None);
@@ -216,8 +216,8 @@ internal sealed class JetBrainsModuleShould
     [Test]
     public async Task FailAnalysisWhenDirectorySizeCantBeRead()
     {
-        var olderRider = FilePath.Create("/any/base/path/Rider2023.3").Value;
-        var newerRider = FilePath.Create("/any/base/path/Rider2024.1").Value;
+        var olderRider = FilePath.Create(Path.Combine("any", "base", "path", "Rider2023.3")).Value;
+        var newerRider = FilePath.Create(Path.Combine("any", "base", "path", "Rider2024.1")).Value;
         GivenBaseDirectoryContains(olderRider, newerRider);
         fileSystem.Size(olderRider).Returns(
             Result<FileSize, DomainError>.Failure(DomainError.InvalidOperation("Cannot read size")));
@@ -288,7 +288,7 @@ internal sealed class JetBrainsModuleShould
     public async Task DeleteSafeItemAndTrackFreedSpace()
     {
         var item = new CleanableItemBuilder()
-            .WithPath("/any/base/path/Rider2023.3")
+            .WithPath(Path.Combine("any", "base", "path", "Rider2023.3"))
             .ForModule(CleanupModuleName.JetBrains)
             .WithReason("outdated")
             .Large()
@@ -320,7 +320,7 @@ internal sealed class JetBrainsModuleShould
     public async Task SkipDeletionForUnsafeItems()
     {
         var unsafeItem = new CleanableItemBuilder()
-            .WithPath("/any/base/path/Rider2024.1")
+            .WithPath(Path.Combine("any", "base", "path", "Rider2024.1"))
             .ForModule(CleanupModuleName.JetBrains)
             .Unsafe()
             .Build();
@@ -338,13 +338,13 @@ internal sealed class JetBrainsModuleShould
     public async Task ContinueDeletingRemainingItemsWhenOneDeletionFails()
     {
         var failItem = new CleanableItemBuilder()
-            .WithPath("/any/base/path/Rider2022.3")
+            .WithPath(Path.Combine("any", "base", "path", "Rider2022.3"))
             .ForModule(CleanupModuleName.JetBrains)
             .WithReason("outdated")
             .Small()
             .Build();
         var successItem = new CleanableItemBuilder()
-            .WithPath("/any/base/path/Rider2023.3")
+            .WithPath(Path.Combine("any", "base", "path", "Rider2023.3"))
             .ForModule(CleanupModuleName.JetBrains)
             .WithReason("outdated")
             .Large()
@@ -364,13 +364,13 @@ internal sealed class JetBrainsModuleShould
     public async Task RecordDeletionErrorsWithoutAbortingCleanup()
     {
         var failItem = new CleanableItemBuilder()
-            .WithPath("/any/base/path/Rider2022.3")
+            .WithPath(Path.Combine("any", "base", "path", "Rider2022.3"))
             .ForModule(CleanupModuleName.JetBrains)
             .WithReason("outdated")
             .Small()
             .Build();
         var successItem = new CleanableItemBuilder()
-            .WithPath("/any/base/path/Rider2023.3")
+            .WithPath(Path.Combine("any", "base", "path", "Rider2023.3"))
             .ForModule(CleanupModuleName.JetBrains)
             .WithReason("outdated")
             .Large()
@@ -391,13 +391,13 @@ internal sealed class JetBrainsModuleShould
     public async Task AccumulateFreedSpaceAcrossDeletedItems()
     {
         var olderRiderItem = new CleanableItemBuilder()
-            .WithPath("/any/base/path/Rider2022.3")
+            .WithPath(Path.Combine("any", "base", "path", "Rider2022.3"))
             .ForModule(CleanupModuleName.JetBrains)
             .WithReason("outdated")
             .Small()
             .Build();
         var newerRiderItem = new CleanableItemBuilder()
-            .WithPath("/any/base/path/Rider2023.3")
+            .WithPath(Path.Combine("any", "base", "path", "Rider2023.3"))
             .ForModule(CleanupModuleName.JetBrains)
             .WithReason("outdated")
             .Large()
@@ -417,9 +417,9 @@ internal sealed class JetBrainsModuleShould
     [Test]
     public async Task IgnoreSingleVersionProductWhenCoexistingWithMultiVersionProduct()
     {
-        var riderOld = FilePath.Create("/any/base/path/Rider2023.3").Value;
-        var riderNew = FilePath.Create("/any/base/path/Rider2024.1").Value;
-        var webStormSingle = FilePath.Create("/any/base/path/WebStorm2024.1").Value;
+        var riderOld = FilePath.Create(Path.Combine("any", "base", "path", "Rider2023.3")).Value;
+        var riderNew = FilePath.Create(Path.Combine("any", "base", "path", "Rider2024.1")).Value;
+        var webStormSingle = FilePath.Create(Path.Combine("any", "base", "path", "WebStorm2024.1")).Value;
         var smallSize = new CleanableItemBuilder().Small().Build().Size;
         GivenBaseDirectoryContains(riderOld, riderNew, webStormSingle);
         GivenAllDirectoriesHaveSize(smallSize);
