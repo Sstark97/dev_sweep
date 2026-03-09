@@ -3,7 +3,7 @@ using DevSweep.Domain.Common;
 
 namespace DevSweep.Tests.Domain.Common;
 
-internal sealed class ResultSuccessTests
+internal sealed class ResultSuccessShould
 {
     [Test]
     public void IsSuccessReturnsTrueForSuccessResult()

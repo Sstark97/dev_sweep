@@ -3,7 +3,7 @@ using DevSweep.Domain.Common;
 
 namespace DevSweep.Tests.Domain.Common;
 
-internal sealed class ResultMatchTests
+internal sealed class ResultMatchShould
 {
     [Test]
     public void ExecutesSuccessFunctionWhenResultIsSuccess()

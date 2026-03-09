@@ -4,7 +4,7 @@ using DevSweep.Domain.Common;
 
 namespace DevSweep.Tests.Domain.Common;
 
-internal sealed class ResultBindTests
+internal sealed class ResultBindShould
 {
     [Test]
     public void ChainsSuccessfulOperations()

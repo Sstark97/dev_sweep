@@ -3,7 +3,7 @@ using DevSweep.Domain.Common;
 
 namespace DevSweep.Tests.Domain.Common;
 
-internal sealed class ResultFailureTests
+internal sealed class ResultFailureShould
 {
     [Test]
     public void IsFailureReturnsTrueForFailureResult()
