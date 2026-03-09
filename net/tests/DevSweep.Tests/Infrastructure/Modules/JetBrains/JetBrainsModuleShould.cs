@@ -1,7 +1,6 @@
 using AwesomeAssertions;
 using DevSweep.Application.Ports.Driven;
 using DevSweep.Domain.Common;
-using DevSweep.Domain.Entities;
 using DevSweep.Domain.Enums;
 using DevSweep.Domain.Errors;
 using DevSweep.Domain.ValueObjects;
