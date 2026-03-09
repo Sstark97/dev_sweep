@@ -3,7 +3,7 @@ using DevSweep.Domain.Common;
 
 namespace DevSweep.Tests.Domain.Common;
 
-internal sealed class ResultLinqQuerySyntaxTests
+internal sealed class ResultLinqQuerySyntaxShould
 {
     [Test]
     public void TransformsValueUsingSelectSyntax()

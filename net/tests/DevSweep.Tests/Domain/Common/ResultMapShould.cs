@@ -4,7 +4,7 @@ using DevSweep.Domain.Common;
 
 namespace DevSweep.Tests.Domain.Common;
 
-internal sealed class ResultMapTests
+internal sealed class ResultMapShould
 {
     [Test]
     public void TransformsValueWhenResultIsSuccess()
