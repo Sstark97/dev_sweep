@@ -44,4 +44,14 @@ public static class ResultLinqExtensions
         }
         return Result<IReadOnlyList<T>, TError>.Success(accumulated);
     }
+
+    public static Result<TValue, TError> Recover<TValue, TError>(
+        this Result<TValue, TError> result,
+        TValue fallback) =>
+        result.IsSuccess ? result : Result<TValue, TError>.Success(fallback);
+
+    public static Result<TValue, TError> Recover<TValue, TError>(
+        this Result<TValue, TError> result,
+        Func<TError, TValue> fallbackFactory) =>
+        result.IsSuccess ? result : Result<TValue, TError>.Success(fallbackFactory(result.Error));
 }
