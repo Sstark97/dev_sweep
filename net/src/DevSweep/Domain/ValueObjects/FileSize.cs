@@ -20,6 +20,17 @@ public readonly record struct FileSize : IComparable<FileSize>
         return Result<FileSize, DomainError>.Success(new FileSize(bytes));
     }
 
+    public static FileSize Zero => new(0);
+
+    public static Result<FileSize, DomainError> FromMegabytes(long megabytes)
+    {
+        if (megabytes < 0)
+            return Result<FileSize, DomainError>.Failure(
+                DomainError.Validation("Megabytes cannot be negative"));
+
+        return Result<FileSize, DomainError>.Success(new FileSize(megabytes * (long)(BytesPerKilobyte * BytesPerKilobyte)));
+    }
+
     public decimal InKilobytes() => bytes / BytesPerKilobyte;
     public decimal InMegabytes() => bytes / (BytesPerKilobyte * BytesPerKilobyte);
     public decimal InGigabytes() => bytes / (BytesPerKilobyte * BytesPerKilobyte * BytesPerKilobyte);

@@ -97,4 +97,30 @@ internal sealed class FileSizeShould
         small.CompareTo(large).Should().BeNegative();
         large.CompareTo(small).Should().BePositive();
     }
+
+    [Test]
+    public void ReturnZeroBytesForZero()
+    {
+        var zero = FileSize.Zero;
+
+        zero.InKilobytes().Should().Be(0);
+    }
+
+    [Test]
+    public void CreateFromMegabytes()
+    {
+        var result = FileSize.FromMegabytes(2);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value.InMegabytes().Should().Be(2);
+    }
+
+    [Test]
+    public void FailFromMegabytesWhenNegative()
+    {
+        var result = FileSize.FromMegabytes(-1);
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.MessageContains("negative").Should().BeTrue();
+    }
 }
