@@ -245,10 +245,8 @@ internal sealed class JetBrainsModuleShould
     [Test]
     public async Task ShutDownRunningIdeBeforeDeletion()
     {
-        processManager.IsProcessRunning("Rider").Returns(true);
-        processManager.IsProcessRunning(Arg.Is<string>(s => s != "Rider")).Returns(false);
-        processManager.KillProcessAsync("Rider", Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(Result<bool, DomainError>.Success(true)));
+        GivenProcessRunningOnly("Rider");
+        GivenProcessKillSucceeds("Rider");
 
         await module.CleanAsync([], CancellationToken.None);
 
@@ -268,11 +266,8 @@ internal sealed class JetBrainsModuleShould
     [Test]
     public async Task RecordKillErrorWithoutAbortingCleanup()
     {
-        processManager.IsProcessRunning("Rider").Returns(true);
-        processManager.IsProcessRunning(Arg.Is<string>(s => s != "Rider")).Returns(false);
-        processManager.KillProcessAsync("Rider", Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(
-                Result<bool, DomainError>.Failure(DomainError.InvalidOperation("Access denied"))));
+        GivenProcessRunningOnly("Rider");
+        GivenProcessKillFails("Rider", "Access denied");
 
         var result = await module.CleanAsync([], CancellationToken.None);
 
@@ -479,5 +474,33 @@ internal sealed class JetBrainsModuleShould
         fileSystem.DeleteDirectoryAsync(path, Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(
                 Result<Unit, DomainError>.Failure(DomainError.InvalidOperation(reason))));
+    }
+
+    private (FilePath older, FilePath newer) GivenTwoVersionsOfProduct(string product)
+    {
+        var older = FilePath.Create(Path.Combine("any", "base", "path", $"{product}2023.3")).Value;
+        var newer = FilePath.Create(Path.Combine("any", "base", "path", $"{product}2024.1")).Value;
+        GivenBaseDirectoryContains(older, newer);
+        GivenAllDirectoriesHaveSize(new CleanableItemBuilder().Small().Build().Size);
+        return (older, newer);
+    }
+
+    private void GivenProcessRunningOnly(string processName)
+    {
+        processManager.IsProcessRunning(processName).Returns(true);
+        processManager.IsProcessRunning(Arg.Is<string>(s => s != processName)).Returns(false);
+    }
+
+    private void GivenProcessKillSucceeds(string processName)
+    {
+        processManager.KillProcessAsync(processName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(Result<bool, DomainError>.Success(true)));
+    }
+
+    private void GivenProcessKillFails(string processName, string reason)
+    {
+        processManager.KillProcessAsync(processName, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(
+                Result<bool, DomainError>.Failure(DomainError.InvalidOperation(reason))));
     }
 }
