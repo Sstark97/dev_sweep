@@ -114,3 +114,22 @@ private static Version ExtractVersion(string directoryName, string product)
         : new Version(0, 0);
 }
 ```
+
+## No `default` or `default!` Expressions
+
+Using `default` on reference types produces `null`, and `default!` suppresses the null warning -- both hide potential null reference bugs and defeat the purpose of nullable reference types.
+
+- BANNED: `default!` to satisfy non-null return types
+- BANNED: `default` as a placeholder for missing values
+- USE: Proper fallback values, empty collections `[]`, or restructure with `SelectMany` / `Option<T>`
+
+```csharp
+// WRONG — default! hides null behind a non-null type
+List<CleanableItem> items = [.. from item in options
+    where item.IsSome
+    select item.Match(x => x, () => default!)];
+
+// CORRECT — SelectMany flattens Option into 0 or 1 elements, no null needed
+List<CleanableItem> items = [..
+    options.SelectMany(opt => opt.Match<IEnumerable<CleanableItem>>(item => [item], () => []))];
+```
