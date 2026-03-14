@@ -65,7 +65,7 @@ internal sealed class OptionShould
     }
 
     [Test]
-    public void BindToSomeWhenIsSomeAndBinderReturnsSome()
+    public void BindToSomeWhenValueAndBinderProduceSome()
     {
         var option = Option<int>.Some(5);
 
@@ -85,7 +85,7 @@ internal sealed class OptionShould
     }
 
     [Test]
-    public void ReturnNoneWhenBinderReturnsNone()
+    public void PropagateNoneWhenBinderYieldsNone()
     {
         var option = Option<int>.Some(5);
 
@@ -105,7 +105,7 @@ internal sealed class OptionShould
     }
 
     [Test]
-    public void FilterReturnNoneWhenPredicateDoesNotMatch()
+    public void FilterToNoneWhenPredicateDoesNotMatch()
     {
         var option = Option<int>.Some(3);
 
@@ -156,7 +156,7 @@ internal sealed class OptionShould
     }
 
     [Test]
-    public void ReturnNoneWhenWherePredicateFailsInLinqQuery()
+    public void YieldNoneWhenWherePredicateFailsInLinqQuery()
     {
         var option = Option<int>.Some(3);
 
@@ -190,7 +190,7 @@ internal sealed class OptionShould
     }
 
     [Test]
-    public void ReturnValueWhenIsSomeOnValueOr()
+    public void ProvideValueWhenIsSomeOnValueOr()
     {
         var option = Option<int>.Some(99);
 
@@ -200,7 +200,7 @@ internal sealed class OptionShould
     }
 
     [Test]
-    public void ReturnFallbackWhenIsNoneOnValueOr()
+    public void ProvideFallbackWhenIsNoneOnValueOr()
     {
         var option = Option<int>.None;
 

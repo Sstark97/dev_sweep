@@ -99,7 +99,7 @@ internal sealed class FileSizeShould
     }
 
     [Test]
-    public void ReturnZeroBytesForZero()
+    public void HaveZeroBytesForZero()
     {
         var zero = FileSize.Zero;
 
