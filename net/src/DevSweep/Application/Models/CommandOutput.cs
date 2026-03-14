@@ -45,4 +45,7 @@ public readonly record struct CommandOutput
     public string StandardError() => standardError;
     public bool IsSuccessful() => exitCode == 0;
     public bool HasOutput() => !string.IsNullOrEmpty(standardOutput);
+
+    public static string ErrorMessage(Result<CommandOutput, DomainError> result) =>
+        result.IsFailure ? result.Error.ToString() : result.Value.StandardError();
 }
