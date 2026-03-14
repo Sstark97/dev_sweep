@@ -150,4 +150,14 @@ internal sealed class CleanupResultShould
         combined.ErrorMessages().Should().Contain(firstError);
         combined.ErrorMessages().Should().Contain(secondError);
     }
+
+    [Test]
+    public void ReturnEmptyResultWithZeroCountsAndNoErrors()
+    {
+        var empty = CleanupResult.Empty;
+
+        empty.TotalFilesDeleted().Should().Be(0);
+        empty.TotalSpaceFreed().Should().Be(FileSize.Zero);
+        empty.HasErrors().Should().BeFalse();
+    }
 }

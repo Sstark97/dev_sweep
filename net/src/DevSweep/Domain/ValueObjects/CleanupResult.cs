@@ -51,4 +51,6 @@ public readonly record struct CleanupResult
         filesDeleted + other.filesDeleted,
         spaceFreed.Add(other.spaceFreed),
         [.. errors, .. other.errors]);
+
+    public static CleanupResult Empty => Create(0, FileSize.Zero).Value;
 }
