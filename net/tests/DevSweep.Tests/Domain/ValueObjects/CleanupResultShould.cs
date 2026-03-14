@@ -152,7 +152,7 @@ internal sealed class CleanupResultShould
     }
 
     [Test]
-    public void ReturnEmptyResultWithZeroCountsAndNoErrors()
+    public void ProvideEmptyResultWithZeroCountsAndNoErrors()
     {
         var empty = CleanupResult.Empty;
 
