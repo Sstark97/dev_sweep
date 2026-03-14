@@ -241,8 +241,14 @@ public class CleanableItemShould
 
 ## No OS-Specific Paths
 
+Use `Path.Combine()` for test paths instead of hardcoded separators. Use generic segments like `"any"`, `"home"`, `"test"`.
+
 ```csharp
-// CORRECT
+// CORRECT — Cross-platform via Path.Combine with generic segments
+private static readonly FilePath DockerConfig = FilePath.Create(Path.Combine("any", ".docker")).Value;
+private static readonly FilePath Home = FilePath.Create(Path.Combine("any", "home")).Value;
+
+// CORRECT — Generic paths in test assertions
 var path = FilePath.Create("/any/test/path").Value;
 var report = FilePath.Create("/documents/report.pdf").Value;
 
@@ -250,6 +256,85 @@ var report = FilePath.Create("/documents/report.pdf").Value;
 FilePath.Create("/var/lib/docker/cache")   // WRONG: Linux-specific
 FilePath.Create("/Users/test/file.txt")    // WRONG: macOS-specific
 FilePath.Create("C:\\Users\\test\\file")   // WRONG: Windows-specific
+```
+
+## Given Helpers — Readable Arrange Phase
+
+For infrastructure/adapter tests with many mock setups, extract `private` helper methods prefixed with `Given` to make the Arrange phase read like a story. These helpers compose: higher-level `Given*` can call lower-level ones.
+
+```csharp
+// CORRECT — Named Given helpers make test intent clear
+[Test]
+public async Task FindNoItemsWhenDockerDaemonNotRunning()
+{
+    GivenDockerCliAvailable();
+    GivenDockerDaemonNotRunning();
+
+    var result = await strategy.AnalyzeAsync(CancellationToken.None);
+
+    result.IsSuccess.Should().BeTrue();
+    result.Value.Should().BeEmpty();
+}
+
+// CORRECT — Given helpers as private methods
+private void GivenDockerCliAvailable() =>
+    commandRunner.IsCommandAvailable("docker").Returns(true);
+
+private void GivenDockerDaemonNotRunning() =>
+    commandRunner.RunAsync("docker", "info", Arg.Any<CancellationToken>())
+        .Returns(Task.FromResult(CommandOutput.Create(1, string.Empty, "Cannot connect")));
+
+// CORRECT — Composable Given helpers (high-level calls low-level)
+private void GivenDockerAvailable()
+{
+    GivenDockerCliAvailable();
+    commandRunner.RunAsync("docker", "info", Arg.Any<CancellationToken>())
+        .Returns(Task.FromResult(CommandOutput.Create(0, "docker info output", string.Empty)));
+}
+
+// CORRECT — Parameterized Given helpers for varying data
+private void GivenStoppedContainerCount(int count)
+{
+    var output = string.Join("\n", Enumerable.Repeat("abc123", count));
+    commandRunner.RunAsync("docker", "ps -aq --filter status=exited", Arg.Any<CancellationToken>())
+        .Returns(Task.FromResult(CommandOutput.Create(0, output, string.Empty)));
+}
+
+// CORRECT — Group "nothing" setup into a composite Given
+private void GivenNoResources()
+{
+    GivenStoppedContainerCount(0);
+    GivenNoDanglingImages();
+    GivenNoVolumes();
+    GivenNoCustomNetworks();
+}
+
+// CORRECT — Factory Given for building test items
+private static CleanableItem GivenOrbStackItem() =>
+    new CleanableItemBuilder()
+        .WithPath(Path.Combine("any", "home", ".orbstack", "cache"))
+        .ForModule(CleanupModuleName.Docker)
+        .Unsafe()
+        .WithReason("docker:orbstack-cache")
+        .Large()
+        .Build();
+```
+
+## Shared Test Constants as Static Readonly Fields
+
+When multiple tests share the same derived values (paths, configs), use `private static readonly` fields. These are computed once and shared safely (value types are immutable).
+
+```csharp
+// CORRECT — Static readonly for shared test paths
+private static readonly FilePath DockerConfig = FilePath.Create(Path.Combine("any", ".docker")).Value;
+private static readonly FilePath Home = FilePath.Create(Path.Combine("any", "home")).Value;
+private static readonly FilePath CacheDir = FilePath.Create(Path.Combine("any", "home", ".orbstack", "cache")).Value;
+
+// WRONG — Instance fields for value objects (see Constructor Fields rule)
+private readonly FilePath path = FilePath.Create("/any/test/path").Value;  // WRONG: instance field
+
+// WRONG — Duplicating construction in every test
+var home = FilePath.Create(Path.Combine("any", "home")).Value;  // WRONG: repeated in 10 tests
 ```
 
 ---
@@ -267,7 +352,7 @@ FilePath.Create("C:\\Users\\test\\file")   // WRONG: Windows-specific
 - [ ] Semantic variable names (`smallSize`, `safeItem`)
 - [ ] No testing of enums
 - [ ] Constructor fields for mock interfaces only (not domain objects)
-- [ ] No OS-specific paths
+- [ ] No OS-specific paths — use `Path.Combine("any", ...)` with generic segments
 - [ ] No magic numbers for sizes — use `.Small()` / `.Large()` on Builders
 - [ ] No abstract base test classes
 - [ ] Builders for complex domain object creation
@@ -275,3 +360,5 @@ FilePath.Create("C:\\Users\\test\\file")   // WRONG: Windows-specific
 - [ ] No boolean words (`true`, `false`) in test names
 - [ ] No data type names in test names (`List`, `String`, etc.)
 - [ ] Names describe observable behavior, not implementation return values
+- [ ] Given helpers for readable Arrange phase in adapter/infrastructure tests
+- [ ] Shared paths as `private static readonly` fields, not instance fields
