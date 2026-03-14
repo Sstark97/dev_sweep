@@ -42,6 +42,40 @@ public readonly record struct MyValueObject
 }
 ```
 
+## Convenience Properties and Alternative Factories
+
+Value objects can expose well-known instances as `static` properties and additional `Create*` factory methods with domain-specific units.
+
+### Rules
+- `Zero` / `Empty` properties bypass validation for well-known safe values
+- Alternative factories use domain units (`FromMegabytes`, `FromSeconds`) and validate in the same style as `Create`
+- `Empty` on composite types can delegate to its own `Create()` + `.Value` (safe because zero is always valid)
+
+### Examples
+
+```csharp
+// CORRECT — Zero as bypassing factory (always valid)
+public static FileSize Zero => new(0);
+
+// CORRECT — Alternative factory with domain-specific units
+public static Result<FileSize, DomainError> FromMegabytes(long megabytes)
+{
+    if (megabytes < 0)
+        return Result<FileSize, DomainError>.Failure(
+            DomainError.Validation("Megabytes cannot be negative"));
+
+    return Result<FileSize, DomainError>.Success(
+        new FileSize(megabytes * (long)(BytesPerKilobyte * BytesPerKilobyte)));
+}
+
+// CORRECT — Empty on composite value object delegating to own factory
+public static CleanupResult Empty => Create(0, FileSize.Zero).Value;
+
+// WRONG — Exposing constructor publicly for "zero" instances
+public static FileSize Zero => new FileSize(0);  // OK only in private context
+public FileSize() { bytes = 0; }                  // WRONG: public parameterless ctor
+```
+
 ---
 
 # Entities
@@ -190,3 +224,71 @@ public sealed class MyUseCase(
 | Resolve/lookup from registry | `ResolveModules` | `Result<List<T>, DomainError>` |
 | Iterate + call async operations | `AnalyzeModulesAsync`, `CleanModulesAsync` | `Task<Result<List<T>, DomainError>>` |
 | User confirmation check | `UserConfirmedAsync` | `Task<bool>` |
+
+---
+
+# Strategy Pattern in Infrastructure
+
+When a module has multiple runtime backends (e.g., Docker CLI vs OrbStack), extract a **strategy interface** and inject strategies as `IReadOnlyList<TStrategy>`.
+
+## Rules
+- Strategy interface lives next to its implementations (same namespace)
+- Module orchestrates strategies: filters by platform, aggregates results
+- Each strategy is a `sealed class` with dependencies via primary constructor
+- Strategies are filtered by `IsAvailable(OperatingSystemType)` before use
+- Module aggregates results from active strategies using `Combine()` or `Collect()`
+
+## Template
+
+```csharp
+// CORRECT — Strategy interface
+public interface IContainerRuntimeStrategy
+{
+    string RuntimeName { get; }
+    bool IsAvailable(OperatingSystemType operatingSystem);
+    Task<Result<IReadOnlyList<CleanableItem>, DomainError>> AnalyzeAsync(CancellationToken cancellationToken);
+    Task<Result<CleanupResult, DomainError>> CleanAsync(IReadOnlyList<CleanableItem> items, CancellationToken cancellationToken);
+}
+
+// CORRECT — Module orchestrating strategies
+public sealed class DockerModule(
+    IEnvironmentProvider environment,
+    IReadOnlyList<IContainerRuntimeStrategy> strategies) : ICleanupModule
+{
+    public async Task<Result<ModuleAnalysis, DomainError>> AnalyzeAsync(CancellationToken cancellationToken)
+    {
+        var analysisResults = await Task.WhenAll(
+            ActiveStrategies().Select(s => s.AnalyzeAsync(cancellationToken)));
+
+        List<CleanableItem> allItems = [.. from result in analysisResults
+            where result.IsSuccess
+            from item in result.Value
+            select item];
+
+        return ModuleAnalysis.Create(CleanupModuleName.Docker, allItems);
+    }
+
+    private IEnumerable<IContainerRuntimeStrategy> ActiveStrategies() =>
+        strategies.Where(s => s.IsAvailable(environment.CurrentOperatingSystem));
+}
+```
+
+---
+
+# Static Helper Methods on Models
+
+Models (value objects, application models) can expose `static` helper methods that encapsulate common `Result` matching patterns. This keeps match logic co-located with the type.
+
+```csharp
+// CORRECT — Static helper encapsulating Result matching on the type itself
+public static string ErrorMessage(Result<CommandOutput, DomainError> result) =>
+    result.IsFailure ? result.Error.ToString() : result.Value.StandardError();
+
+// Usage in callers is clean and declarative
+var errorMsg = CommandOutput.ErrorMessage(commandResult);
+
+// WRONG — Duplicating match logic at every call site
+var errorMsg = commandResult.IsFailure
+    ? commandResult.Error.ToString()
+    : commandResult.Value.StandardError();
+```

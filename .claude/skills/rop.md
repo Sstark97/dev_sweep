@@ -66,3 +66,104 @@ return registry.Modules()
     .Select(r => r.Value)
     .ToList();
 ```
+
+## Recover — Fallback on Failure
+
+Use `Recover()` to turn a failed `Result` into a success with a default value. This is the ROP equivalent of a try/catch fallback:
+
+```csharp
+// CORRECT — Recover with simple fallback value
+var safeOutput = dangerousOperation().Recover(defaultValue);
+
+// CORRECT — Recover computing fallback from the error
+var withMessage = dangerousOperation().Recover(error => $"recovered: {error}");
+
+// CORRECT — Use in pipelines where failure is acceptable
+private static long EstimateFromOutput(
+    Result<CommandOutput, DomainError> result,
+    Func<string, int> counter,
+    long megabytesPerItem) =>
+    result.ToOption()
+        .Filter(output => output.IsSuccessful())
+        .Map(output => counter(output.StandardOutput()) * megabytesPerItem * BytesPerMegabyte)
+        .ValueOr(0L);
+```
+
+## Async Railway Extensions
+
+For async pipelines, use `BindAsync`, `MapAsync`, and `TapAsync` to chain `Task<Result<T, E>>` without nested `await` + `if` blocks:
+
+```csharp
+// CORRECT — async bind chain (flat, readable pipeline)
+var finalResult = await initialResult
+    .BindAsync(value => SomeAsyncOperation(value, cancellationToken))
+    .MapAsync(transformed => transformed.Property);
+
+// CORRECT — TapAsync for side effects that can fail
+var tapped = await result.TapAsync(async value =>
+{
+    await logger.LogAsync(value, cancellationToken);
+    return Result<Unit, DomainError>.Success(Unit.Value);
+});
+
+// WRONG — manual unwrap + rebind
+var intermediate = await someTask;
+if (intermediate.IsFailure)
+    return Result<T, DomainError>.Failure(intermediate.Error);
+var next = await AnotherAsync(intermediate.Value);
+```
+
+## Option<T> — Missing Values Without Errors
+
+Use `Option<T>` when absence is normal and NOT an error. Use `Result<T, E>` when absence IS an error.
+
+```csharp
+// CORRECT — Option for "might not exist" (no error to report)
+private Option<CleanableItem> BuildCacheItem()
+{
+    if (!OrbStackPresent())
+        return Option<CleanableItem>.None;
+
+    return
+        from path in FilePath.Create(cachePath).ToOption()
+        where fileSystem.DirectoryExists(path) && fileSystem.IsDirectoryNotEmpty(path)
+        from size in fileSystem.Size(path).ToOption()
+        select CleanableItem.CreateUnsafe(path, size, moduleName, reason);
+}
+
+// CORRECT — Bridge Result to Option when error details are irrelevant
+var option = result.ToOption();  // Success → Some, Failure → None
+
+// CORRECT — Option with LINQ query syntax (Select, SelectMany, Where)
+var computed =
+    from v in option
+    where v > threshold
+    select v * 2;
+
+// CORRECT — Extract with fallback
+var value = option.ValueOr(defaultValue);
+
+// CORRECT — Option.Filter for conditional presence checks
+var present = FilePath.Create(somePath)
+    .ToOption()
+    .Filter(fileSystem.DirectoryExists)
+    .IsSome;
+
+// WRONG — Using Result when absence is expected
+Result<Config, DomainError> TryFindConfig()  // WRONG: failure implies error
+Option<Config> FindConfig()                    // CORRECT: absence is normal
+```
+
+## Collect — Aggregating Multiple Results
+
+Use `Collect()` to turn a collection of `Result<T, E>` into a single `Result<IReadOnlyList<T>, E>` (fail-fast):
+
+```csharp
+// CORRECT — Aggregate strategy results
+return
+    from results in cleanResults.ToList().Collect(r => r)
+    select results.Aggregate(CleanupResult.Empty, (acc, r) => acc.Combine(r));
+
+// CORRECT — Validate + collect in one step
+var candidates = items.Collect(item => ValidateItem(item));
+```
