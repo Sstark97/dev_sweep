@@ -60,50 +60,50 @@ public sealed class JetBrainsModule(
         IReadOnlyList<CleanableItem> artifactsToClean, CancellationToken cancellationToken)
     {
         var processErrors = await ShutdownRunningProcessesAsync(cancellationToken);
-        var (deletedCount, freedBytes, deleteErrors) = await DeleteSafeItemsAsync(artifactsToClean, cancellationToken);
+        var deleteResult = await DeleteSafeItemsAsync(artifactsToClean, cancellationToken);
 
-        var allErrors = processErrors.Concat(deleteErrors).ToList();
+        if (processErrors.Count > 0)
+        {
+            var processErrorResult = CleanupResult.CreateWithErrors(0, FileSize.Zero, processErrors).Value;
+            deleteResult = deleteResult.Combine(processErrorResult);
+        }
 
-        if (allErrors.Count > 0)
-            return CleanupResult.CreateWithErrors(deletedCount, freedBytes, allErrors);
-
-        return CleanupResult.Create(deletedCount, freedBytes);
+        return Result<CleanupResult, DomainError>.Success(deleteResult);
     }
 
     private Result<IReadOnlyList<CleanableItem>, DomainError> CollectCleanupCandidates(
         IReadOnlyList<FilePath> children)
-        =>
+    {
+        var cacheItem = BuildCacheItem();
+
+        return
             from outdated in Products.CollectMany(product => BuildOutdatedItemsForProduct(product, children))
-            from cache in BuildCacheItem()
-            select cache is not null
-                ? (IReadOnlyList<CleanableItem>)[.. outdated, cache]
-                : outdated;
+            let withCache = cacheItem.Match(
+                cache => [.. outdated, cache],
+                () => outdated)
+            select withCache;
+    }
 
     private async Task<Result<IReadOnlyList<FilePath>, DomainError>> FindImmediateChildrenAsync(
         FilePath basePath, CancellationToken cancellationToken)
     {
         var findResult = await fileSystem.FindDirectoriesAsync(basePath, "*", cancellationToken);
 
-        if (findResult.IsFailure)
-            return Result<IReadOnlyList<FilePath>, DomainError>.Failure(findResult.Error);
-
-        var immediateChildren = findResult.Value
-            .Where(dir => IsImmediateChild(basePath, dir))
-            .ToList();
-
-        return Result<IReadOnlyList<FilePath>, DomainError>.Success(immediateChildren);
+        return findResult.Map(dirs =>
+            (IReadOnlyList<FilePath>)[.. from dir in dirs
+                where IsImmediateChild(basePath, dir)
+                select dir]);
     }
 
     private Result<IReadOnlyList<CleanableItem>, DomainError> BuildOutdatedItemsForProduct(
         string product, IReadOnlyList<FilePath> candidates)
     {
-        var productDirs = candidates
-            .Where(dir => dir.FileName().StartsWith(product, StringComparison.OrdinalIgnoreCase))
-            .Select(dir => new { dir, version = CleanupItemVersion.Create(dir.FileName()[product.Length..]) })
-            .Where(x => x.version.IsSuccess)
-            .OrderBy(x => x.version.Value)
-            .Select(x => x.dir)
-            .ToList();
+        var productDirs = (from dir in candidates
+            where dir.FileName().StartsWith(product, StringComparison.OrdinalIgnoreCase)
+            let version = CleanupItemVersion.Create(dir.FileName()[product.Length..])
+            where version.IsSuccess
+            orderby version.Value
+            select dir).ToList();
 
         if (productDirs.Count <= KeepLatestCount)
             return Result<IReadOnlyList<CleanableItem>, DomainError>.Success([]);
@@ -119,16 +119,16 @@ public sealed class JetBrainsModule(
                 $"Outdated JetBrains IDE version: {dir.FileName()}"));
     }
 
-    private Result<CleanableItem?, DomainError> BuildCacheItem()
+    private Option<CleanableItem> BuildCacheItem()
     {
         var cachePath = environment.JetBrainsCachePath();
 
         if (!fileSystem.DirectoryExists(cachePath) || !fileSystem.IsDirectoryNotEmpty(cachePath))
-            return Result<CleanableItem?, DomainError>.Success(null);
+            return Option<CleanableItem>.None;
 
         return
-            from size in fileSystem.Size(cachePath)
-            select (CleanableItem?)CleanableItem.CreateSafe(
+            from size in fileSystem.Size(cachePath).ToOption()
+            select CleanableItem.CreateSafe(
                 cachePath,
                 size,
                 CleanupModuleName.JetBrains,
@@ -138,7 +138,9 @@ public sealed class JetBrainsModule(
     private async Task<List<string>> ShutdownRunningProcessesAsync(CancellationToken cancellationToken)
     {
         var errors = new List<string>();
-        var runningProcesses = ProcessNames.Where(processManager.IsProcessRunning);
+        var runningProcesses = from name in ProcessNames
+            where processManager.IsProcessRunning(name)
+            select name;
 
         foreach (var processName in runningProcesses)
         {
@@ -151,13 +153,13 @@ public sealed class JetBrainsModule(
         return errors;
     }
 
-    private async Task<(int deletedCount, FileSize freedBytes, List<string> errors)> DeleteSafeItemsAsync(
+    private async Task<CleanupResult> DeleteSafeItemsAsync(
         IReadOnlyList<CleanableItem> artifactsToClean, CancellationToken cancellationToken)
     {
-        var errors = new List<string>();
-        var deletedCount = 0;
-        var freedBytes = FileSize.Create(0).Value;
-        var safeArtifactsToClean = artifactsToClean.Where(artifact => artifact.IsSafeToDelete);
+        var accumulated = CleanupResult.Empty;
+        var safeArtifactsToClean = from artifact in artifactsToClean
+            where artifact.IsSafeToDelete
+            select artifact;
 
         foreach (var artifact in safeArtifactsToClean)
         {
@@ -165,15 +167,15 @@ public sealed class JetBrainsModule(
 
             if (deleteResult.IsFailure)
             {
-                errors.Add($"Failed to delete {artifact.Path}: {deleteResult.Error}");
+                var errorItem = CleanupResult.CreateWithErrors(0, FileSize.Zero, [$"Failed to delete {artifact.Path}: {deleteResult.Error}"]).Value;
+                accumulated = accumulated.Combine(errorItem);
                 continue;
             }
 
-            deletedCount++;
-            freedBytes = freedBytes.Add(artifact.Size);
+            accumulated = accumulated.Combine(CleanupResult.Create(1, artifact.Size).Value);
         }
 
-        return (deletedCount, freedBytes, errors);
+        return accumulated;
     }
 
     private static bool IsImmediateChild(FilePath basePath, FilePath childPath)
