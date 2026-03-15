@@ -64,7 +64,8 @@ public sealed class JetBrainsModule(
 
         if (processErrors.Count > 0)
         {
-            var processErrorResult = CleanupResult.CreateWithErrors(0, FileSize.Zero, processErrors).Value;
+            var processErrorResult = CleanupResult.CreateWithErrors(0, FileSize.Zero, processErrors)
+                .Recover(CleanupResult.Empty).Value;
             deleteResult = deleteResult.Combine(processErrorResult);
         }
 
@@ -165,14 +166,12 @@ public sealed class JetBrainsModule(
         {
             var deleteResult = await fileSystem.DeleteDirectoryAsync(artifact.Path, cancellationToken);
 
-            if (deleteResult.IsFailure)
-            {
-                var errorItem = CleanupResult.CreateWithErrors(0, FileSize.Zero, [$"Failed to delete {artifact.Path}: {deleteResult.Error}"]).Value;
-                accumulated = accumulated.Combine(errorItem);
-                continue;
-            }
+            var itemResult = deleteResult.Match(
+                _ => CleanupResult.Create(1, artifact.Size).Recover(CleanupResult.Empty).Value,
+                error => CleanupResult.CreateWithErrors(0, FileSize.Zero,
+                    [$"Failed to delete {artifact.Path}: {error}"]).Recover(CleanupResult.Empty).Value);
 
-            accumulated = accumulated.Combine(CleanupResult.Create(1, artifact.Size).Value);
+            accumulated = accumulated.Combine(itemResult);
         }
 
         return accumulated;
