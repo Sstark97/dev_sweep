@@ -37,6 +37,32 @@ internal static class WindowsPaths
     internal static string HomebrewCache() =>
         Path.GetTempPath();
 
+    internal static string GradleWrapper(string home) =>
+        Path.Combine(home, ".gradle", "wrapper");
+
+    internal static string NvmCache(string home) =>
+        Path.Combine(home, ".nvm", ".cache");
+
+    internal static string NpmFull() =>
+        Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData),
+            "npm-cache");
+
+    internal static string YarnCache() =>
+        Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+            "Yarn", "Cache");
+
+    internal static string PnpmStore() =>
+        Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+            "pnpm", "store");
+
+    internal static string PoetryCache() =>
+        Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData),
+            "pypoetry", "Cache");
+
     internal static string SystemTemp() =>
         Path.GetTempPath();
 

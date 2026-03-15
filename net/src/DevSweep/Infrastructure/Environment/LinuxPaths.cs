@@ -29,6 +29,24 @@ internal static class LinuxPaths
     internal static string HomebrewCache(string home) =>
         Path.Combine(home, ".cache", "Homebrew");
 
+    internal static string GradleWrapper(string home) =>
+        Path.Combine(home, ".gradle", "wrapper");
+
+    internal static string NvmCache(string home) =>
+        Path.Combine(home, ".nvm", ".cache");
+
+    internal static string NpmFull(string home) =>
+        Path.Combine(home, ".npm");
+
+    internal static string YarnCache(string home) =>
+        Path.Combine(home, ".cache", "yarn");
+
+    internal static string PnpmStore(string home) =>
+        Path.Combine(home, ".local", "share", "pnpm", "store");
+
+    internal static string PoetryCache(string home) =>
+        Path.Combine(home, ".cache", "pypoetry");
+
     internal static string SystemTemp() => "/tmp";
 
     internal static string SystemLogs() => "/var/log";

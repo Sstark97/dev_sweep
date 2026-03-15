@@ -101,6 +101,60 @@ public sealed class SystemEnvironmentProvider : IEnvironmentProvider
             _ => throw new PlatformNotSupportedException($"Unsupported operating system: {operatingSystem}")
         });
 
+    public FilePath GradleWrapperPath() => ToFilePath(
+        operatingSystem switch
+        {
+            OperatingSystemType.MacOS => MacOsPaths.GradleWrapper(homeDirectory),
+            OperatingSystemType.Linux => LinuxPaths.GradleWrapper(homeDirectory),
+            OperatingSystemType.Windows => WindowsPaths.GradleWrapper(homeDirectory),
+            _ => throw new PlatformNotSupportedException($"Unsupported operating system: {operatingSystem}")
+        });
+
+    public FilePath NvmCachePath() => ToFilePath(
+        operatingSystem switch
+        {
+            OperatingSystemType.MacOS => MacOsPaths.NvmCache(homeDirectory),
+            OperatingSystemType.Linux => LinuxPaths.NvmCache(homeDirectory),
+            OperatingSystemType.Windows => WindowsPaths.NvmCache(homeDirectory),
+            _ => throw new PlatformNotSupportedException($"Unsupported operating system: {operatingSystem}")
+        });
+
+    public FilePath NpmFullPath() => ToFilePath(
+        operatingSystem switch
+        {
+            OperatingSystemType.MacOS => MacOsPaths.NpmFull(homeDirectory),
+            OperatingSystemType.Linux => LinuxPaths.NpmFull(homeDirectory),
+            OperatingSystemType.Windows => WindowsPaths.NpmFull(),
+            _ => throw new PlatformNotSupportedException($"Unsupported operating system: {operatingSystem}")
+        });
+
+    public FilePath YarnCachePath() => ToFilePath(
+        operatingSystem switch
+        {
+            OperatingSystemType.MacOS => MacOsPaths.YarnCache(homeDirectory),
+            OperatingSystemType.Linux => LinuxPaths.YarnCache(homeDirectory),
+            OperatingSystemType.Windows => WindowsPaths.YarnCache(),
+            _ => throw new PlatformNotSupportedException($"Unsupported operating system: {operatingSystem}")
+        });
+
+    public FilePath PnpmStorePath() => ToFilePath(
+        operatingSystem switch
+        {
+            OperatingSystemType.MacOS => MacOsPaths.PnpmStore(homeDirectory),
+            OperatingSystemType.Linux => LinuxPaths.PnpmStore(homeDirectory),
+            OperatingSystemType.Windows => WindowsPaths.PnpmStore(),
+            _ => throw new PlatformNotSupportedException($"Unsupported operating system: {operatingSystem}")
+        });
+
+    public FilePath PoetryCachePath() => ToFilePath(
+        operatingSystem switch
+        {
+            OperatingSystemType.MacOS => MacOsPaths.PoetryCache(homeDirectory),
+            OperatingSystemType.Linux => LinuxPaths.PoetryCache(homeDirectory),
+            OperatingSystemType.Windows => WindowsPaths.PoetryCache(),
+            _ => throw new PlatformNotSupportedException($"Unsupported operating system: {operatingSystem}")
+        });
+
     public FilePath SystemTempPath() => ToFilePath(
         operatingSystem switch
         {
