@@ -29,6 +29,24 @@ internal static class MacOsPaths
     internal static string HomebrewCache(string home) =>
         Path.Combine(home, "Library", "Caches", "Homebrew");
 
+    internal static string GradleWrapper(string home) =>
+        Path.Combine(home, ".gradle", "wrapper");
+
+    internal static string NvmCache(string home) =>
+        Path.Combine(home, ".nvm", ".cache");
+
+    internal static string NpmFull(string home) =>
+        Path.Combine(home, ".npm");
+
+    internal static string YarnCache(string home) =>
+        Path.Combine(home, "Library", "Caches", "Yarn");
+
+    internal static string PnpmStore(string home) =>
+        Path.Combine(home, "Library", "pnpm", "store");
+
+    internal static string PoetryCache(string home) =>
+        Path.Combine(home, "Library", "Caches", "pypoetry");
+
     internal static string SystemTemp() => "/tmp";
 
     internal static string SystemLogs() => "/private/var/log";

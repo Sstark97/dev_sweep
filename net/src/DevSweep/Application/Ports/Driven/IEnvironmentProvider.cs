@@ -16,6 +16,12 @@ public interface IEnvironmentProvider
     FilePath PythonCachePath();
     FilePath SdkmanPath();
     FilePath HomebrewCachePath();
+    FilePath GradleWrapperPath();
+    FilePath NvmCachePath();
+    FilePath NpmFullPath();
+    FilePath YarnCachePath();
+    FilePath PnpmStorePath();
+    FilePath PoetryCachePath();
     FilePath SystemTempPath();
     FilePath SystemLogsPath();
     FilePath SystemCachePath();
