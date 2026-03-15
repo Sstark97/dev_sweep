@@ -22,4 +22,7 @@ public static class OptionLinqExtensions
 
     public static Option<T> ToOption<T, TError>(this Result<T, TError> result) =>
         result.IsSuccess ? Option<T>.Some(result.Value) : Option<T>.None;
+
+    public static IEnumerable<T> ToEnumerable<T>(this Option<T> option) =>
+        option.Match<IEnumerable<T>>(value => [value], () => []);
 }
