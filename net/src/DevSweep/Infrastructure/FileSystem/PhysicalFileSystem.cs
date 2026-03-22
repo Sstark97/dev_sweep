@@ -55,95 +55,189 @@ public sealed class PhysicalFileSystem : IFileSystem
 
     public Task<Result<Unit, DomainError>> DeleteDirectoryAsync(
         FilePath path, CancellationToken cancellationToken) =>
-        Task.Run(() =>
+        RunSafeAsync(() =>
         {
-            if (cancellationToken.IsCancellationRequested)
-                return Result<Unit, DomainError>.Failure(
-                    DomainError.InvalidOperation("Operation was cancelled"));
-
-            try
-            {
-                Directory.Delete(path.ToString(), recursive: true);
-                return Result<Unit, DomainError>.Success(Unit.Value);
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or SecurityException)
-            {
-                return Result<Unit, DomainError>.Failure(
-                    DomainError.InvalidOperation(exception.Message));
-            }
+            Directory.Delete(path.ToString(), recursive: true);
+            return Result<Unit, DomainError>.Success(Unit.Value);
         }, cancellationToken);
 
     public Task<Result<Unit, DomainError>> DeleteFileAsync(
         FilePath path, CancellationToken cancellationToken) =>
-        Task.Run(() =>
+        RunSafeAsync(() =>
         {
-            if (cancellationToken.IsCancellationRequested)
-                return Result<Unit, DomainError>.Failure(
-                    DomainError.InvalidOperation("Operation was cancelled"));
-
-            try
-            {
-                File.Delete(path.ToString());
-                return Result<Unit, DomainError>.Success(Unit.Value);
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or SecurityException)
-            {
-                return Result<Unit, DomainError>.Failure(
-                    DomainError.InvalidOperation(exception.Message));
-            }
+            File.Delete(path.ToString());
+            return Result<Unit, DomainError>.Success(Unit.Value);
         }, cancellationToken);
 
     public Task<Result<IReadOnlyList<FilePath>, DomainError>> FindDirectoriesAsync(
         FilePath basePath, string pattern, CancellationToken cancellationToken) =>
-        Task.Run<Result<IReadOnlyList<FilePath>, DomainError>>(() =>
-        {
-            if (cancellationToken.IsCancellationRequested)
-                return Result<IReadOnlyList<FilePath>, DomainError>.Failure(
-                    DomainError.InvalidOperation("Operation was cancelled"));
-
-            try
-            {
-                var entries = Directory.EnumerateDirectories(
-                    basePath.ToString(), pattern, SearchOption.AllDirectories);
-
-                IReadOnlyList<FilePath> paths = [.. from entry in entries
-                    let filePathResult = FilePath.Create(entry)
-                    where filePathResult.IsSuccess
-                    select filePathResult.Value];
-
-                return Result<IReadOnlyList<FilePath>, DomainError>.Success(paths);
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or SecurityException)
-            {
-                return Result<IReadOnlyList<FilePath>, DomainError>.Failure(
-                    DomainError.InvalidOperation(exception.Message));
-            }
-        }, cancellationToken);
+        RunSafeAsync(
+            () => FindEntries(basePath.ToString(), pattern, Directory.EnumerateDirectories),
+            cancellationToken);
 
     public Task<Result<IReadOnlyList<FilePath>, DomainError>> FindFilesAsync(
         FilePath basePath, string pattern, CancellationToken cancellationToken) =>
-        Task.Run<Result<IReadOnlyList<FilePath>, DomainError>>(() =>
+        RunSafeAsync(
+            () => FindEntries(basePath.ToString(), pattern, Directory.EnumerateFiles),
+            cancellationToken);
+
+    public Task<Result<IReadOnlyList<FilePath>, DomainError>> FindDirectoriesAsync(
+        FilePath basePath, string directoryName, int maxDepth,
+        IReadOnlyList<string> excludePatterns, CancellationToken cancellationToken) =>
+        RunSafeAsync(
+            () => WalkDirectories(basePath.ToString(), directoryName, maxDepth, excludePatterns, 0),
+            cancellationToken);
+
+    public Task<Result<DateTime, DomainError>> MostRecentWriteTimeAsync(
+        FilePath directory, IReadOnlyList<string> excludeDirectoryNames,
+        CancellationToken cancellationToken) =>
+        RunSafeAsync(
+            () => CollectMostRecentWriteTime(directory.ToString(), excludeDirectoryNames),
+            cancellationToken);
+
+    private static Task<Result<T, DomainError>> RunSafeAsync<T>(
+        Func<Result<T, DomainError>> operation,
+        CancellationToken cancellationToken) =>
+        Task.Run(() =>
         {
             if (cancellationToken.IsCancellationRequested)
-                return Result<IReadOnlyList<FilePath>, DomainError>.Failure(
+                return Result<T, DomainError>.Failure(
                     DomainError.InvalidOperation("Operation was cancelled"));
 
             try
             {
-                var entries = Directory.EnumerateFiles(
-                    basePath.ToString(), pattern, SearchOption.AllDirectories);
-
-                IReadOnlyList<FilePath> paths = [.. from entry in entries
-                    let filePathResult = FilePath.Create(entry)
-                    where filePathResult.IsSuccess
-                    select filePathResult.Value];
-
-                return Result<IReadOnlyList<FilePath>, DomainError>.Success(paths);
+                return operation();
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or SecurityException)
             {
-                return Result<IReadOnlyList<FilePath>, DomainError>.Failure(
+                return Result<T, DomainError>.Failure(
                     DomainError.InvalidOperation(exception.Message));
             }
         }, cancellationToken);
+
+    private static Result<IReadOnlyList<FilePath>, DomainError> FindEntries(
+        string basePath,
+        string pattern,
+        Func<string, string, SearchOption, IEnumerable<string>> enumerator)
+    {
+        var entries = enumerator(basePath, pattern, SearchOption.AllDirectories);
+
+        IReadOnlyList<FilePath> paths = [.. from entry in entries
+            let filePathResult = FilePath.Create(entry)
+            where filePathResult.IsSuccess
+            select filePathResult.Value];
+
+        return Result<IReadOnlyList<FilePath>, DomainError>.Success(paths);
+    }
+
+    private static Result<IReadOnlyList<FilePath>, DomainError> WalkDirectories(
+        string currentPath, string targetName, int maxDepth,
+        IReadOnlyList<string> excludePatterns, int currentDepth)
+    {
+        if (currentDepth > maxDepth)
+            return Result<IReadOnlyList<FilePath>, DomainError>.Success([]);
+
+        return TryEnumerateSubdirectories(currentPath)
+            .Bind(subdirectories => GatherMatches(subdirectories, targetName, maxDepth, excludePatterns, currentDepth));
+    }
+
+    private static Result<IReadOnlyList<FilePath>, DomainError> GatherMatches(
+        IEnumerable<string> subdirectories, string targetName, int maxDepth,
+        IReadOnlyList<string> excludePatterns, int currentDepth)
+    {
+        var collected = new List<FilePath>();
+
+        foreach (var subdirectory in subdirectories)
+        {
+            var name = Path.GetFileName(subdirectory);
+
+            if (excludePatterns.Contains(name))
+                continue;
+
+            if (name == targetName)
+            {
+                var pathResult = FilePath.Create(subdirectory);
+                if (pathResult.IsSuccess)
+                    collected.Add(pathResult.Value);
+                continue;
+            }
+
+            collected.AddRange(
+                WalkDirectories(subdirectory, targetName, maxDepth, excludePatterns, currentDepth + 1)
+                    .Recover([]).Value);
+        }
+
+        return Result<IReadOnlyList<FilePath>, DomainError>.Success(collected);
+    }
+
+    private static Result<IEnumerable<string>, DomainError> TryEnumerateSubdirectories(string currentPath)
+    {
+        try
+        {
+            return Result<IEnumerable<string>, DomainError>.Success(
+                Directory.EnumerateDirectories(currentPath));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or SecurityException)
+        {
+            return Result<IEnumerable<string>, DomainError>.Failure(
+                DomainError.InvalidOperation($"Cannot enumerate directories in '{currentPath}': {exception.Message}"));
+        }
+    }
+
+    private static Result<DateTime, DomainError> CollectMostRecentWriteTime(
+        string directoryPath, IReadOnlyList<string> excludeDirectoryNames) =>
+        TryEnumerateEntries(directoryPath)
+            .Map(entries => MaxWriteTime(entries, excludeDirectoryNames));
+
+    private static DateTime MaxWriteTime(
+        IEnumerable<string> entries, IReadOnlyList<string> excludeDirectoryNames)
+    {
+        var times = from entry in entries
+                    let time = Directory.Exists(entry)
+                        ? MostRecentChildDirectoryWriteTime(entry, excludeDirectoryNames)
+                        : MostRecentFileWriteTime(entry)
+                    where time.IsSome
+                    select time.ValueOr(DateTime.MinValue);
+
+        return times.DefaultIfEmpty(DateTime.MinValue.ToUniversalTime()).Max();
+    }
+
+    private static Result<IEnumerable<string>, DomainError> TryEnumerateEntries(string directoryPath)
+    {
+        try
+        {
+            return Result<IEnumerable<string>, DomainError>.Success(
+                Directory.EnumerateFileSystemEntries(directoryPath));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or SecurityException)
+        {
+            return Result<IEnumerable<string>, DomainError>.Failure(
+                DomainError.InvalidOperation($"Cannot enumerate entries in '{directoryPath}': {exception.Message}"));
+        }
+    }
+
+    private static Option<DateTime> MostRecentFileWriteTime(string entry)
+    {
+        try
+        {
+            return Option<DateTime>.Some(File.GetLastWriteTimeUtc(entry));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or SecurityException)
+        {
+            return Option<DateTime>.None;
+        }
+    }
+
+    private static Option<DateTime> MostRecentChildDirectoryWriteTime(
+        string entry, IReadOnlyList<string> excludeDirectoryNames)
+    {
+        var dirName = Path.GetFileName(entry);
+        if (excludeDirectoryNames.Contains(dirName))
+            return Option<DateTime>.None;
+
+        return Option<DateTime>.Some(
+            CollectMostRecentWriteTime(entry, excludeDirectoryNames)
+                .Recover(DateTime.MinValue.ToUniversalTime())
+                .Value);
+    }
 }
