@@ -25,4 +25,6 @@ public interface IEnvironmentProvider
     FilePath SystemTempPath();
     FilePath SystemLogsPath();
     FilePath SystemCachePath();
+    int StaleProjectDays { get; }
+    int StaleProjectMaxDepth { get; }
 }

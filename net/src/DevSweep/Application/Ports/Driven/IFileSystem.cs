@@ -17,4 +17,10 @@ public interface IFileSystem
         FilePath basePath, string pattern, CancellationToken cancellationToken);
     Task<Result<IReadOnlyList<FilePath>, DomainError>> FindFilesAsync(
         FilePath basePath, string pattern, CancellationToken cancellationToken);
+    Task<Result<IReadOnlyList<FilePath>, DomainError>> FindDirectoriesAsync(
+        FilePath basePath, string directoryName, int maxDepth,
+        IReadOnlyList<string> excludePatterns, CancellationToken cancellationToken);
+    Task<Result<DateTime, DomainError>> MostRecentWriteTimeAsync(
+        FilePath directory, IReadOnlyList<string> excludeDirectoryNames,
+        CancellationToken cancellationToken);
 }
