@@ -35,11 +35,10 @@ public sealed record AnalysisReport
 
     private IReadOnlyList<ModuleAnalysis> ModuleAnalyses { get; }
 
-    public FileSize TotalSize()
-    {
-        var zero = FileSize.Create(0).Value;
-        return ModuleAnalyses.Aggregate(zero, (acc, analysis) => acc.Add(analysis.TotalSize()));
-    }
+    public IReadOnlyList<ModuleAnalysis> Modules() => ModuleAnalyses;
+
+    public FileSize TotalSize() =>
+        ModuleAnalyses.Aggregate(FileSize.Zero, (acc, analysis) => acc.Add(analysis.TotalSize()));
 
     public int TotalItemCount() => ModuleAnalyses.Sum(analysis => analysis.ItemCount());
 

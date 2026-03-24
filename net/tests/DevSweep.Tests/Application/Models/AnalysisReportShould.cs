@@ -145,6 +145,22 @@ internal sealed class AnalysisReportShould
     }
 
     [Test]
+    public void ProvideModuleAnalyses()
+    {
+        var dockerAnalysis = ModuleAnalysis.CreateEmpty(CleanupModuleName.Docker);
+        var homebrewAnalysis = ModuleAnalysis.CreateEmpty(CleanupModuleName.Homebrew);
+
+        var reportResult = AnalysisReport.Create([dockerAnalysis, homebrewAnalysis]);
+        var report = reportResult.Value;
+
+        var modules = report.Modules();
+
+        modules.Count.Should().Be(2);
+        modules.Should().Contain(dockerAnalysis);
+        modules.Should().Contain(homebrewAnalysis);
+    }
+
+    [Test]
     public void FailWhenModuleAnalysesContainDuplicates()
     {
         var dockerAnalysis = ModuleAnalysis.CreateEmpty(CleanupModuleName.Docker);
