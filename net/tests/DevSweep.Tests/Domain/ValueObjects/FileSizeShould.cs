@@ -56,6 +56,27 @@ internal sealed class FileSizeShould
     }
 
     [Test]
+    public void ExposeRawBytesCount()
+    {
+        var result = FileSize.Create(2048);
+        var fileSize = result.Value;
+
+        var bytes = fileSize.InBytes();
+
+        bytes.Should().Be(2048L);
+    }
+
+    [Test]
+    public void ExposeZeroBytesForZero()
+    {
+        var zero = FileSize.Zero;
+
+        var bytes = zero.InBytes();
+
+        bytes.Should().Be(0L);
+    }
+
+    [Test]
     public void AddTwoSizes()
     {
         var smallSize = FileSize.Create(1024).Value;
