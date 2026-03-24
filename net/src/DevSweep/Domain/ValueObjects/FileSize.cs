@@ -31,6 +31,7 @@ public readonly record struct FileSize : IComparable<FileSize>
         return Result<FileSize, DomainError>.Success(new FileSize(megabytes * (long)(BytesPerKilobyte * BytesPerKilobyte)));
     }
 
+    public long InBytes() => bytes;
     public decimal InKilobytes() => bytes / BytesPerKilobyte;
     public decimal InMegabytes() => bytes / (BytesPerKilobyte * BytesPerKilobyte);
     public decimal InGigabytes() => bytes / (BytesPerKilobyte * BytesPerKilobyte * BytesPerKilobyte);
