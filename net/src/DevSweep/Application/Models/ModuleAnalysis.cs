@@ -33,11 +33,8 @@ public sealed record ModuleAnalysis
 
     public IReadOnlyList<CleanableItem> Items() => items;
 
-    public FileSize TotalSize()
-    {
-        var zero = FileSize.Create(0).Value;
-        return items.Aggregate(zero, (acc, item) => acc.Add(item.Size));
-    }
+    public FileSize TotalSize() =>
+        items.Aggregate(FileSize.Zero, (acc, item) => acc.Add(item.Size));
 
     public int SafeItemCount() => items.Count(item => item.IsSafeToDelete);
 
