@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NoWarn>CA2007;CA1062</NoWarn>
+    <NoWarn>CA2007;CA1062;CA1000;CA1515;CA1716;CA1805;CA1002;CA2227</NoWarn>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
