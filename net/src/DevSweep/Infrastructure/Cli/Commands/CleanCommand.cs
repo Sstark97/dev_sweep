@@ -10,9 +10,13 @@ namespace DevSweep.Infrastructure.Cli.Commands;
 [CliCommand(Name = "clean", Description = "Clean developer caches", Parent = typeof(RootCommand))]
 public sealed class CleanCommand(
     ICleanupUseCase cleanupUseCase,
+    IAnalyzeUseCase analyzeUseCase,
     IAvailableModulesUseCase availableModulesUseCase,
     IOutputFormatter outputFormatter)
 {
+    [CliOption(Description = "Preview without deleting", Name = "--dry-run", Aliases = ["-d"])]
+    public bool DryRun { get; set; }
+
     [CliArgument(Description = "Module names to clean (e.g., jetbrains docker)")]
     public List<string> Modules { get; set; } = [];
 
@@ -39,6 +43,27 @@ public sealed class CleanCommand(
             return 1;
         }
 
+        if (DryRun)
+            return await ExecuteAnalysisAsync(moduleNames);
+
+        return await ExecuteCleanupAsync(moduleNames);
+    }
+
+    private async Task<int> ExecuteAnalysisAsync(IReadOnlyList<CleanupModuleName> moduleNames)
+    {
+        var result = await analyzeUseCase.Invoke(moduleNames, CancellationToken.None);
+
+        if (result.IsFailure)
+        {
+            outputFormatter.Error(result.Error.ToString());
+            return 1;
+        }
+
+        return 0;
+    }
+
+    private async Task<int> ExecuteCleanupAsync(IReadOnlyList<CleanupModuleName> moduleNames)
+    {
         var result = await cleanupUseCase.Invoke(moduleNames, CancellationToken.None);
 
         if (result.IsFailure)

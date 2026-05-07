@@ -14,6 +14,7 @@ namespace DevSweep.Tests.Infrastructure.Cli.Commands;
 internal sealed class CleanCommandShould
 {
     private readonly ICleanupUseCase cleanupUseCase = Substitute.For<ICleanupUseCase>();
+    private readonly IAnalyzeUseCase analyzeUseCase = Substitute.For<IAnalyzeUseCase>();
     private readonly IAvailableModulesUseCase availableModulesUseCase = Substitute.For<IAvailableModulesUseCase>();
     private readonly IOutputFormatter outputFormatter = Substitute.For<IOutputFormatter>();
 
@@ -21,7 +22,7 @@ internal sealed class CleanCommandShould
     public async Task CleanSpecifiedModulesSuccessfully()
     {
         GivenCleanupSucceeds();
-        var command = new CleanCommand(cleanupUseCase, availableModulesUseCase, outputFormatter)
+        var command = new CleanCommand(cleanupUseCase, analyzeUseCase, availableModulesUseCase, outputFormatter)
         {
             Modules = ["docker"]
         };
@@ -39,7 +40,7 @@ internal sealed class CleanCommandShould
     {
         GivenAvailableModulesReturns([CleanupModuleName.Docker, CleanupModuleName.Homebrew]);
         GivenCleanupSucceeds();
-        var command = new CleanCommand(cleanupUseCase, availableModulesUseCase, outputFormatter)
+        var command = new CleanCommand(cleanupUseCase, analyzeUseCase, availableModulesUseCase, outputFormatter)
         {
             All = true
         };
@@ -56,7 +57,7 @@ internal sealed class CleanCommandShould
     [Test]
     public async Task FailWhenNuclearWithoutDevToolsModule()
     {
-        var command = new CleanCommand(cleanupUseCase, availableModulesUseCase, outputFormatter)
+        var command = new CleanCommand(cleanupUseCase, analyzeUseCase, availableModulesUseCase, outputFormatter)
         {
             Modules = ["docker"],
             Nuclear = true
@@ -72,7 +73,7 @@ internal sealed class CleanCommandShould
     public async Task AllowNuclearWithDevToolsModule()
     {
         GivenCleanupSucceeds();
-        var command = new CleanCommand(cleanupUseCase, availableModulesUseCase, outputFormatter)
+        var command = new CleanCommand(cleanupUseCase, analyzeUseCase, availableModulesUseCase, outputFormatter)
         {
             Modules = ["devtools"],
             Nuclear = true
@@ -89,7 +90,7 @@ internal sealed class CleanCommandShould
     [Test]
     public async Task FailWhenNoModulesSpecifiedAndAllNotSet()
     {
-        var command = new CleanCommand(cleanupUseCase, availableModulesUseCase, outputFormatter)
+        var command = new CleanCommand(cleanupUseCase, analyzeUseCase, availableModulesUseCase, outputFormatter)
         {
             Modules = [],
             All = false
@@ -105,7 +106,7 @@ internal sealed class CleanCommandShould
     public async Task FailWhenCleanupReturnsError()
     {
         GivenCleanupFails(DomainError.InvalidOperation("Cleanup failed"));
-        var command = new CleanCommand(cleanupUseCase, availableModulesUseCase, outputFormatter)
+        var command = new CleanCommand(cleanupUseCase, analyzeUseCase, availableModulesUseCase, outputFormatter)
         {
             Modules = ["docker"]
         };
@@ -114,6 +115,62 @@ internal sealed class CleanCommandShould
 
         exitCode.Should().Be(1);
         outputFormatter.Received().Error(Arg.Any<string>());
+    }
+
+    [Test]
+    public async Task RunAnalysisInsteadOfCleanupWhenDryRunIsEnabled()
+    {
+        GivenAnalysisSucceeds();
+        var command = new CleanCommand(cleanupUseCase, analyzeUseCase, availableModulesUseCase, outputFormatter)
+        {
+            Modules = ["docker"],
+            DryRun = true
+        };
+
+        var exitCode = await command.RunAsync();
+
+        exitCode.Should().Be(0);
+        await analyzeUseCase.Received().Invoke(
+            Arg.Is<IReadOnlyList<CleanupModuleName>>(m => m.Contains(CleanupModuleName.Docker)),
+            Arg.Any<CancellationToken>());
+        await cleanupUseCase.DidNotReceive().Invoke(
+            Arg.Any<IReadOnlyList<CleanupModuleName>>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task FailWhenAnalysisFailsInDryRunMode()
+    {
+        GivenAnalysisFails(DomainError.InvalidOperation("Boom"));
+        var command = new CleanCommand(cleanupUseCase, analyzeUseCase, availableModulesUseCase, outputFormatter)
+        {
+            Modules = ["docker"],
+            DryRun = true
+        };
+
+        var exitCode = await command.RunAsync();
+
+        exitCode.Should().Be(1);
+        outputFormatter.Received().Error(Arg.Any<string>());
+    }
+
+    [Test]
+    public async Task NotInvokeAnalysisWhenDryRunIsNotSet()
+    {
+        GivenCleanupSucceeds();
+        var command = new CleanCommand(cleanupUseCase, analyzeUseCase, availableModulesUseCase, outputFormatter)
+        {
+            Modules = ["docker"]
+        };
+
+        await command.RunAsync();
+
+        await analyzeUseCase.DidNotReceive().Invoke(
+            Arg.Any<IReadOnlyList<CleanupModuleName>>(),
+            Arg.Any<CancellationToken>());
+        await cleanupUseCase.Received().Invoke(
+            Arg.Is<IReadOnlyList<CleanupModuleName>>(m => m.Contains(CleanupModuleName.Docker)),
+            Arg.Any<CancellationToken>());
     }
 
     private void GivenCleanupSucceeds()
@@ -128,6 +185,19 @@ internal sealed class CleanCommandShould
         cleanupUseCase.Invoke(Arg.Any<IReadOnlyList<CleanupModuleName>>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(
                 Result<IReadOnlyList<CleanupSummary>, DomainError>.Failure(error)));
+    }
+
+    private void GivenAnalysisSucceeds()
+    {
+        var emptyReport = AnalysisReport.Create([]).Value;
+        analyzeUseCase.Invoke(Arg.Any<IReadOnlyList<CleanupModuleName>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(Result<AnalysisReport, DomainError>.Success(emptyReport)));
+    }
+
+    private void GivenAnalysisFails(DomainError error)
+    {
+        analyzeUseCase.Invoke(Arg.Any<IReadOnlyList<CleanupModuleName>>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(Result<AnalysisReport, DomainError>.Failure(error)));
     }
 
     private void GivenAvailableModulesReturns(IReadOnlyList<CleanupModuleName> modules)
